@@ -97,7 +97,7 @@ class Board:
 
             # Loop into a straight line until it reaches the bounds whch will result in queen-like target
             while self.is_in_bounds(new_row, new_col):
-                target = self.get_tile(new_row,new_col)
+                target = self.get_tile(new_row, new_col)
 
                 # Break the target line if its obstructed by player or AI 
                 if (new_row, new_col) == self.player_pos or (new_row, new_col) == self.ai_pos:

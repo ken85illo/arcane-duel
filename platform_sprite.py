@@ -25,13 +25,21 @@ class Platform:
 
     SPRITE_SHEET_DARK = SpriteSheet("assets/dark_grass_platform.png", 34, 34)
     SPRITE_SHEET_LIGHT = SpriteSheet("assets/light_grass_platform.png", 34, 34)
+    SPRITE_SHEET_FROZEN_DARK = SpriteSheet("assets/dark_frozen_platform.png", 34, 34)
+    SPRITE_SHEET_FROZEN_LIGHT = SpriteSheet("assets/light_frozen_platform.png", 34, 34)
 
     @staticmethod
-    def get_platform(mapping_index, width, height, is_dark=True):
+    def get_platform(mapping_index, width, height, is_dark=True, is_frozen=True):
         x, y = Platform.MAPPING[mapping_index]
-        if is_dark:
-            return Platform.SPRITE_SHEET_DARK.get_image(x, y, width, height)
+        if is_frozen:
+            if is_dark:
+                return Platform.SPRITE_SHEET_FROZEN_DARK.get_image(x, y, width, height)
+            else: 
+                return Platform.SPRITE_SHEET_FROZEN_LIGHT.get_image(x, y, width, height)
         else:
-            return Platform.SPRITE_SHEET_LIGHT.get_image(x, y, width, height)
+            if is_dark:
+                return Platform.SPRITE_SHEET_DARK.get_image(x, y, width, height)
+            else:
+                return Platform.SPRITE_SHEET_LIGHT.get_image(x, y, width, height)
 
 

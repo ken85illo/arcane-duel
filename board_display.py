@@ -2,7 +2,7 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import GridConfig
+from enums import GridConfig, Phase
 
 # ===== HELPER FUNCTION ======
 def tile_rect(row, col):
@@ -16,7 +16,7 @@ def tile_rect(row, col):
 
 # ===== Helper functions =====
 class BoardDisplay:
-    def __init__(self, board, screen, player, ai, TILE_SIZE):
+    def __init__(self, board, screen, player, ai, TILE_SIZE, phase):
         self.player = player
         self.ai = ai
         
@@ -25,6 +25,8 @@ class BoardDisplay:
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 36) 
         
+        self.phase = phase
+
     def draw(self):
         self._draw_grid()
 
@@ -34,17 +36,21 @@ class BoardDisplay:
             for col in range(GridConfig.GRID_SIZE):
                 tile = self.board.get_tile(row, col)
                 rect = tile_rect(row, col)
-
                 text_surface = self.font.render(str(tile.mana), True, (255, 255, 255))
-                self.screen.blit(text_surface, rect )
+
+                    
                 self._draw_platform(row, col)
+
 
         # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)
         player_row, player_col = self.board.player_pos
         self.player.draw(player_col * self.TILE_SIZE,player_row * self.TILE_SIZE, self.screen)
+        print(self.board.player_mana)
 
         ai_row, ai_col = self.board.ai_pos
         self.ai.draw(ai_col * self.TILE_SIZE, ai_row * self.TILE_SIZE,self.screen)
+
+
         
     def _draw_platform(self, row, col):
         platform_index = self._get_platform_index(row, col)
@@ -52,17 +58,19 @@ class BoardDisplay:
         x = col * self.TILE_SIZE
         y = row * self.TILE_SIZE
 
+        is_frozen = self.board.get_tile(row, col).is_frozen()
         is_dark = (row + col) % 2 == 0
 
         platform = Platform.get_platform(
-            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark
+            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen
         )
         self.screen.blit(platform, (x, y))
 
     def _get_platform_index(self, row, col):
         def is_platform(row, col):
             if self.board.is_in_bounds(row, col):
-                return self.board.get_tile(row, col).is_active()
+                tile = self.board.get_tile(row, col)
+                return tile.is_active() or tile.is_frozen()
             return False
 
         if is_platform(row, col):
@@ -96,6 +104,5 @@ class BoardDisplay:
         key = (top, left, bottom, right)
         return neighbor_map.get(key)
         
-
         
     

@@ -25,6 +25,7 @@ class Tile:
     
     def freeze_tile(self):
         self.state = TileState.FROZEN
+        self.freeze_timer = 6 # CHANGE ME
 
     def unfreeze_tile(self):
         self.state = TileState.ACTIVE
