@@ -1,5 +1,6 @@
 import random
 import sys
+from wizard import Wizard
 from enum import Enum, auto
 
 import pygame
@@ -38,7 +39,7 @@ class SpellOption(Enum):
     FREEZE = auto()
 
 class Game:
-    TILE_SIZE = 40
+    TILE_SIZE = 60
 
     # TEMPORARY COLORS. WILL BE CHANGED WITH SPRITES.
     COLOR_WALL = (40, 40, 50)
@@ -107,6 +108,8 @@ class Game:
         self.freeze_btn_rect = pygame.Rect(
             start_x + btn_width + spacing, btn_y, btn_width, btn_height
         )
+
+        self.wizard = Wizard(100, 100, False)
 
     def draw_tile_topdown(self, surface, gx, gy, color):
         if color is None:
@@ -409,11 +412,13 @@ class Game:
 
                     self.draw_tile_topdown(self.screen, gx, gy, tile_color)
 
+            self.wizard.draw(self.screen)
             # Draw Interface Panels over map boundary
             self.draw_ui()
 
             pygame.display.flip()
             self.clock.tick(60)
+            self.wizard.update()
 
 
 if __name__ == "__main__":

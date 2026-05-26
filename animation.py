@@ -1,51 +1,39 @@
 import pygame
 
-
 class Animation:
-    def __init__(
-        self,
-        frame_paths: list[str],
-        img_scale: float,
-        frame_duration: float,
-        repeat: bool = True,
-    ):
-        self.frames = [
-            Image(path, img_scale).get_image() for path in frame_paths
-        ]
-        self.frame_duration = frame_duration  # milliseconds per frame
+    def __init__(self, spritesheet, row, num_frames, target_width, target_height, speed) :
+        self.frames = []
         self.current_frame = 0
+        self.speed = speed
         self.last_update = pygame.time.get_ticks()
-        self.repeat = repeat
-        self.finished = False
+
+        for i in range(num_frames):
+            x_pos = i * spritesheet.frame_width
+            y_pos = row * spritesheet.frame_height
+
+            # Get the frame from the spritesheet
+            raw_frame = spritesheet.get_image(
+                x_pos, y_pos, spritesheet.frame_width, spritesheet.frame_height
+            )
+
+            # Scale the cropped frame
+            scaled_frame = pygame.transform.scale(raw_frame, (target_width, target_height))
+
+            self.frames.append(scaled_frame)
 
     def update(self):
-        if self.finished:
-            return
-        now = pygame.time.get_ticks()
-        if now - self.last_update > self.frame_duration:
-            if self.current_frame + 1 < len(self.frames):
-                self.current_frame += 1
-            elif self.repeat:
-                self.current_frame = 0
-            else:
-                self.finished = True
-            self.last_update = now
+        current_time = pygame.time.get_ticks()
+        if current_time - self.last_update > self.speed:
+            self.current_frame = (self.current_frame + 1) % len(self.frames)
+            self.last_update = current_time
 
     def get_current_frame(self):
         return self.frames[self.current_frame]
 
     def reset(self):
         self.current_frame = 0
-        self.finished = False
         self.last_update = pygame.time.get_ticks()
 
 
-class Image:
-    def __init__(self, path: str, img_scale: float):
-        self.original = pygame.image.load(path)
-        self.image = pygame.transform.smoothscale_by(
-            self.original, img_scale * 0.01
-        )
 
-    def get_image(self):
-        return self.image
+

@@ -1,49 +1,138 @@
+from enum import Enum, auto
+import pygame
+from spritesheet import SpriteSheet
 from animation import Animation
+
+class WizardStates(Enum):
+    IDLE = auto()
+    FRONT_WALK = auto()
+    SIDE_WALK_RIGHT = auto()
+    SIDE_WALK_LEFT = auto()
+    BACK_WALK = auto()
+    ATTACK = auto()
+    DEATH = auto()
 
 
 class Wizard:
-    STATES = ("idle", "walking", "casting")
+    FRAME_WIDTH = 93
+    FRAME_HEIGHT = 77
 
-    def __init__(
-        self, color: str, frame_duration_ms: int, img_scale: float = 100.0
-    ):
-        if color not in ("blue", "red"):
-            raise ValueError("Wizard color must be 'blue' or 'red'")
-        self.color = color
-        self.img_scale = img_scale
-        self.frame_duration_ms = frame_duration_ms
+    def __init__(self, x, y, is_red=False, scale_w=120, scale_h=100, speed=4):
+        # Positional tracking
+        self.pos = pygame.Vector2(x, y)
+        self.speed = speed
+        self.scale_w = scale_w
+        self.scale_h = scale_h
 
-        self.animations = {}
-        for state in self.STATES:
-            folder = f"wizard_{color}"
-            frame_paths = [
-                f"assets/{folder}/{self._state_prefix(state)}_000.png",
-                f"assets/{folder}/{self._state_prefix(state)}_001.png",
-                f"assets/{folder}/{self._state_prefix(state)}_002.png",
-                f"assets/{folder}/{self._state_prefix(state)}_003.png",
-                f"assets/{folder}/{self._state_prefix(state)}_004.png",
-            ]
-            # By default, only idle and walking repeat, casting does not
-            repeat = state not in ("casting", "walking")
-            self.animations[state] = Animation(
-                frame_paths, img_scale, frame_duration_ms, repeat=repeat
-            )
-        self.state = "idle"
+        self.state = WizardStates.IDLE
 
-    def _state_prefix(self, state):
-        return {"idle": "1_IDLE", "walking": "4_JUMP", "casting": "5_ATTACK"}[
-            state
-        ]
+        color = "red" if is_red else "blue"
 
-    def set_state(self, state: str):
-        if state not in self.STATES:
-            raise ValueError(f"Invalid state: {state}")
-        if self.state != state:
-            self.state = state
-            self.animations[state].reset()
+        idle_sheet = SpriteSheet(
+            f"assets/{color}_wizard_idle.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+        front_walk_sheet = SpriteSheet(
+            f"assets/{color}_wizard_front_walk.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+        back_walk_sheet = SpriteSheet(
+            f"assets/{color}_wizard_back_walk.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+        side_walk_sheet = SpriteSheet(
+            f"assets/{color}_wizard_side_walk.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+        attack_sheet = SpriteSheet(
+            f"assets/{color}_wizard_attack.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+        death_sheet = SpriteSheet(
+            f"assets/{color}_wizard_death.png",
+            Wizard.FRAME_WIDTH,
+            Wizard.FRAME_HEIGHT,
+        )
+
+        # Map animations to states
+        self.animations = {
+            WizardStates.IDLE: Animation(
+                idle_sheet,
+                row=0,
+                num_frames=4,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=150,
+            ),
+            WizardStates.FRONT_WALK: Animation(
+                front_walk_sheet,
+                row=0,
+                num_frames=4,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=120,
+            ),
+            WizardStates.SIDE_WALK_RIGHT: Animation(
+                side_walk_sheet,
+                row=0,
+                num_frames=4,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=120,
+            ),
+            WizardStates.SIDE_WALK_LEFT: Animation(
+                side_walk_sheet,
+                row=0,
+                num_frames=4,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=120,
+            ),
+            WizardStates.BACK_WALK: Animation(
+                back_walk_sheet,
+                row=0,
+                num_frames=4,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=120,
+            ),
+            WizardStates.ATTACK: Animation(
+                attack_sheet,
+                row=0,
+                num_frames=6,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=80,
+            ),
+            WizardStates.DEATH: Animation(
+                death_sheet,
+                row=0,
+                num_frames=8,
+                target_width=scale_w,
+                target_height=scale_h,
+                speed=200,
+            ),
+        }
+
+    def set_state(self, new_state: WizardStates):
+        if self.state != new_state:
+            self.state = new_state
+            self.animations[self.state].reset()
 
     def update(self):
-        self.animations[self.state].update()
+        active_anim = self.animations[self.state]
+        active_anim.update()
 
-    def get_current_frame(self):
-        return self.animations[self.state].get_current_frame()
+
+    def draw(self, surface: pygame.Surface):
+        raw_image = self.animations[self.state].get_current_frame()
+
+        image = pygame.transform.flip(raw_image, self.state == WizardStates.SIDE_WALK_LEFT, False)
+
+        rect = image.get_rect(center=(int(self.pos.x), int(self.pos.y)))
+        surface.blit(image, rect.topleft)
