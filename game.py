@@ -37,9 +37,8 @@ class SpellOption(Enum):
     BURN = auto()
     FREEZE = auto()
 
-
 class Game:
-    TILE_SIZE = 60
+    TILE_SIZE = 40
 
     # TEMPORARY COLORS. WILL BE CHANGED WITH SPRITES.
     COLOR_WALL = (40, 40, 50)
@@ -73,6 +72,18 @@ class Game:
         self.screen = pygame.display.set_mode((self.width, self.height))
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 24)
+
+        self.freeze_coords ={
+            "player": {
+                "x": None,
+                "y": None
+            }, 
+
+            "bot": {
+                "x": None,
+                "y": None
+            }, 
+        }
 
         self.player_x = 4
         self.player_y = 1
@@ -155,56 +166,6 @@ class Game:
         )
         self.screen.blit(platform, (x, y))
 
-    def is_valid_spell_area(self, cur_x, cur_y, gx, gy):
-        if self.map[gy][gx] != " ":
-            return False
-
-        dx = gx - cur_x
-        dy = gy - cur_y
-
-        is_straight = dx == 0 or dy == 0
-        is_diagonal = abs(dx) == abs(dy)
-
-        if not (is_straight or is_diagonal):
-            return False
-
-        # Check for obstructions along the path
-        step_x = 0 if dx == 0 else dx // abs(dx)
-        step_y = 0 if dy == 0 else dy // abs(dy)
-
-        check_x = cur_x + step_x
-        check_y = cur_y + step_y
-
-        # Loop from player position up to (but not including) the target tile
-        while (check_x, check_y) != (gx, gy):
-            if self.map[check_y][check_x] != " ":
-                return False
-
-            check_x += step_x
-            check_y += step_y
-
-        return True
-
-    def handle_player_spell(self, mouse_pos):
-        isValidClick, gx, gy = self.is_valid_click_area(mouse_pos)
-
-        if not isValidClick:
-            return
-
-        if self.is_valid_spell_area(self.player_x, self.player_y, gx, gy):
-            self.map[gy][gx] = (
-                "burn" if self.selected_spell == SpellOption.BURN else "freeze"
-            )
-
-            # Transition to spell phase
-            self.current_turn = TurnState.PLAYER_MOVE
-
-            self.selected_spell = None
-
-            # Give turn to bot
-            self.current_turn = TurnState.BOT_MOVE
-            self.handle_turn()
-
     def draw_ui(self):
         # Draw base background container panel
         ui_rect = pygame.Rect(
@@ -270,6 +231,76 @@ class Game:
 
         return False, -1, -1
 
+    def execute_move(self, cur_x, cur_y, gx, gy):
+        if self.current_turn == TurnState.PLAYER_MOVE:
+            self.player_x = gx
+            self.player_y = gy
+            self.map[gy][gx] = "p"
+        else:
+            self.bot_x = gx
+            self.bot_y = gy
+            self.map[gy][gx] = "b"
+
+        self.map[cur_y][cur_x] = "burn"
+        
+
+    def is_valid_spell_area(self, cur_x, cur_y, gx, gy):
+        if self.map[gy][gx] != " ":
+            return False
+
+        dx = gx - cur_x
+        dy = gy - cur_y
+
+        is_straight = dx == 0 or dy == 0
+        is_diagonal = abs(dx) == abs(dy)
+
+        if not (is_straight or is_diagonal):
+            return False
+
+        # Check for obstructions along the path
+        step_x = 0 if dx == 0 else dx // abs(dx)
+        step_y = 0 if dy == 0 else dy // abs(dy)
+
+        check_x = cur_x + step_x
+        check_y = cur_y + step_y
+
+        # Loop from player position up to (but not including) the target tile
+        while (check_x, check_y) != (gx, gy):
+            if self.map[check_y][check_x] != " ":
+                return False
+
+            check_x += step_x
+            check_y += step_y
+
+        return True
+
+    # def check_freeze_spell(self):
+    #     if TurnState.PLAYER_MOVE
+
+
+    def handle_player_spell(self, mouse_pos):
+        isValidClick, gx, gy = self.is_valid_click_area(mouse_pos)
+
+        if not isValidClick:
+            return
+
+        if self.is_valid_spell_area(self.player_x, self.player_y, gx, gy):
+            if self.selected_spell == SpellOption.BURN:
+                self.map[gy][gx] = "burn"
+            else:
+                self.map[gy][gx] = "freeze"
+                self.freeze_coords["player"]["x"] = gx
+                self.freeze_coords["player"]["y"] = gy
+            
+            # Transition to spell phase
+            self.current_turn = TurnState.PLAYER_MOVE
+
+            self.selected_spell = None
+
+            # Give turn to bot
+            self.current_turn = TurnState.BOT_MOVE
+            self.handle_turn()
+
     def handle_player_movement(self, mouse_pos):
         isValidClick, gx, gy = self.is_valid_click_area(mouse_pos)
         if not isValidClick:
@@ -284,10 +315,8 @@ class Game:
             and (distance_x <= 1 and distance_y <= 1)
             and (distance_x + distance_y > 0)
         ):
-            self.map[self.player_y][self.player_x] = " "
-            self.player_x = gx
-            self.player_y = gy
-            self.map[gy][gx] = "p"
+
+            self.execute_move(self.player_x, self.player_y, gx, gy)
 
             # Transition to spell phase
             self.current_turn = TurnState.PLAYER_SPELL
@@ -306,12 +335,7 @@ class Game:
             target_tile = self.map[new_y][new_x]
 
             if target_tile == " ":
-                self.map[new_y][new_x] = "b"
-                self.map[self.bot_y][self.bot_x] = " "
-
-                self.bot_x = new_x
-                self.bot_y = new_y
-
+                self.execute_move(self.bot_x, self.bot_y, new_x, new_y)
                 return
 
     def simulate_bot_spell(self):
