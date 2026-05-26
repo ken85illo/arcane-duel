@@ -7,7 +7,7 @@ from board import Board
 from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
 from board import Board
-from enums import MageType, GridConfig
+from enums import MageType, GridConfig, Spell
 import pygame
 
 class Game:
@@ -31,7 +31,7 @@ class Game:
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
-        self.phase = self._randomize_starting_turn() # Starting turn
+        self.phase =  Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
         self.event_listener = EventListener(self.board, self.phase, self.valid_player_move_set)
         self.spell_choice = None
         self.winner = None     
@@ -42,6 +42,7 @@ class Game:
         # self.ai_busy      = False
 
         self.update_valid_moves()
+        self.update_valid_spells()
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
@@ -88,7 +89,7 @@ class Game:
             
             # Handles left mouse clicks
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.phase == Phase.PLAYER_MOVE:
+                if self.phase == Phase.PLAYER_MOVE or self.phase == Phase.PLAYER_SPELL:
                     self._handle_player_click(mx, my)
     
     def _handle_player_click(self, mx, my):
@@ -97,8 +98,15 @@ class Game:
         if self.phase == Phase.PLAYER_MOVE and clicked_tile in self.valid_player_move_set:
             row, col = clicked_tile
             self.board.apply_move(MageType.PLAYER, row, col)
-            self.update_valid_moves()
-            print(f"Player moved to ({row}, {col})")
+            self.update_valid_spells()
+            self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
+            print(f"Player moved to {clicked_tile}. Valid spells: {self.valid_player_spell_set}")
+        
+        elif self.phase == Phase.PLAYER_SPELL and clicked_tile in self.valid_player_spell_set:
+            row, col = clicked_tile
+            self.board.apply_spell(MageType.PLAYER, Spell.FREEZE, row, col)
+            self.update_valid_spells()
+
 
     # ===== Main Game Loop =====
     def run(self):

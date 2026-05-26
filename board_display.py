@@ -23,6 +23,7 @@ class BoardDisplay:
         self.TILE_SIZE = TILE_SIZE
         self.board = board
         self.screen = screen
+        self.font = pygame.font.SysFont("Arial", 36) 
         
     def draw(self):
         self._draw_grid()
@@ -34,6 +35,8 @@ class BoardDisplay:
                 tile = self.board.get_tile(row, col)
                 rect = tile_rect(row, col)
 
+                text_surface = self.font.render(str(tile.mana), True, (255, 255, 255))
+                self.screen.blit(text_surface, rect )
                 self._draw_platform(row, col)
 
         # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)

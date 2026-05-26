@@ -139,7 +139,7 @@ class Board:
 
     def apply_spell(self, who: MageType, spell, row, col):
         target = self.get_tile(row, col)
-        
+        print(f"{who.name} casts {spell.name} on tile ({row}, {col}) with state {target.state.name} and mana {target.mana}")
         if spell == Spell.FREEZE:
             if target.is_frozen():
                 return
