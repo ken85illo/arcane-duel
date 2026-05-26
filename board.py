@@ -1,19 +1,18 @@
 import random
 from tile import Tile
-from enums import TileState, Mage, Spell
+from enums import TileState, Mage, Spell, GridConfig
 
 class Board:
-    GRID_SIZE = 10
     CUMULATIVE_TILE_GEN_CHANCE = 25
 
     def _init_grid(self):
         # Generate the tiles with random mana
-        grid = [[Tile(r, c) for c in range(self.GRID_SIZE)] for r in range(self.GRID_SIZE)]
+        grid = [[Tile(r, c) for c in range(GridConfig.GRID_SIZE)] for r in range(GridConfig.GRID_SIZE)]
         
         # Generate walls on the edge of the board
-        for row in range(self.GRID_SIZE):
-            for col in range(self.GRID_SIZE):
-                if 0 == row == self.GRID_SIZE - 1 and 0 == col == self.GRID_SIZE - 1:
+        for row in range(GridConfig.GRID_SIZE):
+            for col in range(GridConfig.GRID_SIZE):
+                if 0 == row == GridConfig.GRID_SIZE - 1 and 0 == col == GridConfig.GRID_SIZE - 1:
                     grid[row][col].state = TileState.WALL
 
         # Set the mana of the starting point to 0
@@ -23,8 +22,8 @@ class Board:
         return grid
 
     def _assign_random_cumulative_tiles(self):
-        for row in range(self.GRID_SIZE):
-            for col in range(self.GRID_SIZE):
+        for row in range(GridConfig.GRID_SIZE):
+            for col in range(GridConfig.GRID_SIZE):
                 target = self.grid[row][col]
                 
                 if random.randint(1,100) <= self.CUMULATIVE_TILE_GEN_CHANCE:
@@ -36,10 +35,10 @@ class Board:
 
     def __init__(self):
         # Place the player on top-middle of the board
-        self.player_pos = (1, self.GRID_SIZE // 2)
+        self.player_pos = (GridConfig.GRID_SIZE // 2, 1)
 
         # Place the AI on bottom-middle of the board
-        self.ai_pos = (self.GRID_SIZE - 2, self.GRID_SIZE // 2)
+        self.ai_pos = (GridConfig.GRID_SIZE // 2, GridConfig.GRID_SIZE - 2)
 
         # Initialize the grid and mage positions
         self.grid = self._init_grid()
@@ -69,8 +68,8 @@ class Board:
 
     # ===== Movement Check =====
     def is_in_bounds(self, row, col):    
-        is_valid_row_move = 0 <= row < self.GRID_SIZE
-        is_valid_col_move = 0 <= col < self.GRID_SIZE
+        is_valid_row_move = 0 <= row < GridConfig.GRID_SIZE
+        is_valid_col_move = 0 <= col < GridConfig.GRID_SIZE
     
         return is_valid_row_move and is_valid_col_move
     

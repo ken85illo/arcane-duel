@@ -1,7 +1,7 @@
 import pygame
 
 class Animation:
-    def __init__(self, spritesheet, row, num_frames, target_width, target_height, speed) :
+    def __init__(self, spritesheet, row, num_frames, target_width, target_height, speed, crop = None) :
         self.frames = []
         self.current_frame = 0
         self.speed = speed
@@ -16,10 +16,28 @@ class Animation:
                 x_pos, y_pos, spritesheet.frame_width, spritesheet.frame_height
             )
 
+            if crop:
+                x, y, frame_width, frame_height = crop
+                image = pygame.Surface((frame_width, frame_height)).convert_alpha()
+                image.fill((0, 0, 0, 0))
+                image.blit(raw_frame, (0, 0), (x, y, frame_width, frame_height))
+
+                raw_frame = image
+
             # Scale the cropped frame
             scaled_frame = pygame.transform.scale(raw_frame, (target_width, target_height))
 
             self.frames.append(scaled_frame)
+
+    def crop(self, x, y, width, height):
+        for i in range(len(self.frames)):
+            image = pygame.Surface((self.frame_width, self.frame_height)).convert_alpha()
+            image.fill((0, 0, 0, 0))
+            image.blit(self.frames[i])
+
+            self.frames[i] = image
+            
+        
 
     def update(self):
         current_time = pygame.time.get_ticks()

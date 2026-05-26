@@ -2,21 +2,24 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from game_bak import Game
+from enums import GridConfig
 
 # ===== HELPER FUNCTION ======
 def tile_rect(row, col):
     # Get the rect from the tile
     return pygame.Rect(
-        col * Game.TILE_SIZE,
-        row * Game.TILE_SIZE,
-        Game.TILE_SIZE,
-        Game.TILE_SIZE,
+        col * GridConfig.TILE_SIZE,
+        row * GridConfig.TILE_SIZE,
+        GridConfig.TILE_SIZE,
+        GridConfig.TILE_SIZE,
     )
 
 # ===== Helper functions =====
 class BoardDisplay:
-    def __init__(self, board, screen, TILE_SIZE):
+    def __init__(self, board, screen, player, ai, TILE_SIZE):
+        self.player = player
+        self.ai = ai
+        
         self.TILE_SIZE = TILE_SIZE
         self.board = board
         self.screen = screen
@@ -24,16 +27,24 @@ class BoardDisplay:
     def draw(self):
         self._draw_grid()
 
-    def _draw_grid(self ):
+    def _draw_grid(self):
         overlay = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
 
         self.board.get_tile(1, 1).destroy_tile()
-        for row in range(Board.GRID_SIZE):
-            for col in range(Board.GRID_SIZE):
+        for row in range(GridConfig.GRID_SIZE):
+            for col in range(GridConfig.GRID_SIZE):
                 tile = self.board.get_tile(row, col)
                 rect = tile_rect(row, col)
 
                 self._draw_platform(row, col)
+
+
+
+                player_row, player_col = self.board.player_pos
+                self.player.draw(player_row * self.TILE_SIZE - 30, player_col * self.TILE_SIZE - 80, self.screen)
+
+                ai_row, ai_col  = self.board.ai_pos
+                self.ai.draw(ai_row * self.TILE_SIZE, ai_col * self.TILE_SIZE, self.screen)
         
     def _draw_platform(self, row, col):
         platform_index = self._get_platform_index(row, col)

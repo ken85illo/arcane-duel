@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import pygame
+from enums import GridConfig
 from spritesheet import SpriteSheet
 from animation import Animation
 
@@ -17,12 +18,9 @@ class Mage:
     FRAME_WIDTH = 93
     FRAME_HEIGHT = 77
 
-    def __init__(self, is_red=False, scale_w=120, scale_h=100, speed=4):
+    def __init__(self, is_red=False):
         # Animation speed and scale
-        self.speed = speed
-        self.scale_w = scale_w
-        self.scale_h = scale_h
-
+        scale = GridConfig.TILE_SIZE * 2
         self.state = MageStates.IDLE
 
         color = "red" if is_red else "blue"
@@ -58,63 +56,71 @@ class Mage:
             Mage.FRAME_HEIGHT,
         )
 
+        crop=(18, 20, 40, 40)
         # Map animations to states
         self.animations = {
             MageStates.IDLE: Animation(
                 idle_sheet,
                 row=0,
-                num_frames=4,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=7,
+                target_width=scale,
+                target_height=scale,
                 speed=150,
+                crop=crop
             ),
             MageStates.FRONT_WALK: Animation(
                 front_walk_sheet,
                 row=0,
-                num_frames=4,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=8,
+                target_width=scale,
+                target_height=scale,
                 speed=120,
+                crop=crop
             ),
             MageStates.SIDE_WALK_RIGHT: Animation(
                 side_walk_sheet,
                 row=0,
-                num_frames=4,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=8,
+                target_width=scale,
+                target_height=scale,
                 speed=120,
+                crop=crop
             ),
             MageStates.SIDE_WALK_LEFT: Animation(
                 side_walk_sheet,
                 row=0,
-                num_frames=4,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=8,
+                target_width=scale,
+                target_height=scale,
                 speed=120,
+                crop=crop
             ),
             MageStates.BACK_WALK: Animation(
                 back_walk_sheet,
                 row=0,
-                num_frames=4,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=8,
+                target_width=scale,
+                target_height=scale,
                 speed=120,
+                crop=crop
             ),
             MageStates.ATTACK: Animation(
                 attack_sheet,
                 row=0,
-                num_frames=6,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=11,
+                target_width=scale,
+                target_height=scale,
                 speed=80,
+                crop=crop
             ),
             MageStates.DEATH: Animation(
                 death_sheet,
                 row=0,
-                num_frames=8,
-                target_width=scale_w,
-                target_height=scale_h,
+                num_frames=11,
+                target_width=scale,
+                target_height=scale,
                 speed=200,
+                crop=crop
             ),
         }
 
@@ -132,4 +138,4 @@ class Mage:
         raw_image = self.animations[self.state].get_current_frame()
 
         image = pygame.transform.flip(raw_image, self.state == MageStates.SIDE_WALK_LEFT, False)
-        surface.blit(image)
+        surface.blit(image, (x, y))
