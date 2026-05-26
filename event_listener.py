@@ -1,5 +1,5 @@
 from board_display import tile_rect
-from enums import Phase, Mage, GridConfig
+from enums import Phase, GridConfig
 import pygame
 import sys
 
@@ -42,7 +42,7 @@ class EventListener:
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
 
-        if self.current_phase == Phase.PLAYER_TURN and clicked_tile in self.valid_moves_set:
+        if self.current_phase == Phase.PLAYER_MOVE and clicked_tile in self.valid_moves_set:
             row, col = clicked_tile
             self.board.apply_move(Mage.PLAYER, row, col)
             print(f"Player moved to ({row}, {col})")

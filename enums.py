@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-class Mage(Enum):
+class MageType(Enum):
     PLAYER = auto()
     AI = auto()
 

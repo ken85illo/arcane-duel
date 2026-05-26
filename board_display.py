@@ -29,8 +29,6 @@ class BoardDisplay:
 
     def _draw_grid(self):
         overlay = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
-
-        self.board.get_tile(1, 1).destroy_tile()
         for row in range(GridConfig.GRID_SIZE):
             for col in range(GridConfig.GRID_SIZE):
                 tile = self.board.get_tile(row, col)
@@ -38,18 +36,18 @@ class BoardDisplay:
 
                 self._draw_platform(row, col)
 
+        # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)
+        player_row, player_col = self.board.player_pos
+        self.player.draw(player_col * self.TILE_SIZE,player_row * self.TILE_SIZE, self.screen)
 
-
-                player_row, player_col = self.board.player_pos
-                self.player.draw(player_row * self.TILE_SIZE - 30, player_col * self.TILE_SIZE - 80, self.screen)
-
-                ai_row, ai_col  = self.board.ai_pos
-                self.ai.draw(ai_row * self.TILE_SIZE, ai_col * self.TILE_SIZE, self.screen)
+        ai_row, ai_col = self.board.ai_pos
+        self.ai.draw(ai_col * self.TILE_SIZE, ai_row * self.TILE_SIZE,self.screen)
         
     def _draw_platform(self, row, col):
         platform_index = self._get_platform_index(row, col)
-        x = row * self.TILE_SIZE
-        y = col * self.TILE_SIZE
+        # Map grid coordinates to screen coordinates: column -> x, row -> y
+        x = col * self.TILE_SIZE
+        y = row * self.TILE_SIZE
 
         is_dark = (row + col) % 2 == 0
 
@@ -68,10 +66,10 @@ class BoardDisplay:
             return 0
 
         # Checks if the platform is surrounded by other platforms
-        top = is_platform(row, col - 1)
-        left = is_platform(row - 1, col)
-        bottom = is_platform(row, col + 1)
-        right = is_platform(row + 1, col)
+        top = is_platform(row - 1, col)
+        left = is_platform(row, col - 1)
+        bottom = is_platform(row + 1, col)
+        right = is_platform(row, col + 1)
 
         neighbor_map = {
             (True, True, True, True): 1,  # fully surrounded

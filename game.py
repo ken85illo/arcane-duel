@@ -7,7 +7,7 @@ from board import Board
 from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
 from board import Board
-from enums import GridConfig
+from enums import MageType, GridConfig
 import pygame
 
 class Game:
@@ -24,7 +24,7 @@ class Game:
     def _new_game(self):
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.player.set_state(MageStates.BACK_WALK)
+        self.player.set_state(MageStates.ATTACK)
 
         self.board = Board() # Starting board
         self.board_display = BoardDisplay(self.board, self.screen, self.player, self.ai,  GridConfig.TILE_SIZE)
@@ -56,7 +56,7 @@ class Game:
 
     def update_valid_spells(self):
         row, col = self.board.player_pos
-        self.valid_player_spell_set = self.board.get_valid_spells(row, col)
+        self.valid_player_spell_set = self.board.valid_spell_targets(row, col)
 
     # ===== Action Listeners =====
     def _tile_at(self, px, py):
@@ -75,28 +75,29 @@ class Game:
         # Tracks tile currently hovered at (future use: highlight tile selection) 
         self.hover_tile = self._tile_at(mx, my)
         is_inside_val = self.hover_tile in self.valid_player_move_set
-        print(self.valid_player_move_set)
-        print(f"Hovering over tile: {self.hover_tile} inside {is_inside_val}")
+        # print(self.valid_player_move_set)
+        # print(f"Player pos: {self.board.player_pos}\nHovering over tile: {self.hover_tile} inside {is_inside_val}")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()    
             
             # When Game Over, restarts on 'R' key press
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_r and self.current_phase == Phase.GAME_OVER:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_r and self.phase == Phase.GAME_OVER:
                 self._new_game()
             
             # Handles left mouse clicks
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if self.current_phase == Phase.PLAYER_MOVE:
+                if self.phase == Phase.PLAYER_MOVE:
                     self._handle_player_click(mx, my)
     
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
 
-        if self.current_phase == Phase.PLAYER_TURN and clicked_tile in self.valid_moves_set:
+        if self.phase == Phase.PLAYER_MOVE and clicked_tile in self.valid_player_move_set:
             row, col = clicked_tile
-            self.board.apply_move(Mage.PLAYER, row, col)
+            self.board.apply_move(MageType.PLAYER, row, col)
+            self.update_valid_moves()
             print(f"Player moved to ({row}, {col})")
 
     # ===== Main Game Loop =====

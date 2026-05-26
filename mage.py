@@ -20,6 +20,8 @@ class Mage:
 
     def __init__(self, is_red=False):
         # Animation speed and scale
+        self.offset_x, self.offset_y = -25, -60
+        crop=(18, 20, 50, 50)
         scale = GridConfig.TILE_SIZE * 2
         self.state = MageStates.IDLE
 
@@ -56,7 +58,6 @@ class Mage:
             Mage.FRAME_HEIGHT,
         )
 
-        crop=(18, 20, 40, 40)
         # Map animations to states
         self.animations = {
             MageStates.IDLE: Animation(
@@ -138,4 +139,4 @@ class Mage:
         raw_image = self.animations[self.state].get_current_frame()
 
         image = pygame.transform.flip(raw_image, self.state == MageStates.SIDE_WALK_LEFT, False)
-        surface.blit(image, (x, y))
+        surface.blit(image, (x + self.offset_x, y + self.offset_y))

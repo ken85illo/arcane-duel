@@ -36,7 +36,7 @@ class Tile:
             self.freeze_timer -= 1
 
             # Check if frozen tile should be unfrozen
-            if self.freeze_decrement <= 0:
+            if self.freeze_timer <= 0:
                 self.state = TileState.ACTIVE
                 self.freeze_timer = 0
     
