@@ -2,7 +2,19 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
+from game_bak import Game
 
+# ===== HELPER FUNCTION ======
+def tile_rect(row, col):
+    # Get the rect from the tile
+    return pygame.Rect(
+        col * Game.TILE_SIZE,
+        row * Game.TILE_SIZE,
+        Game.TILE_SIZE,
+        Game.TILE_SIZE,
+    )
+
+# ===== Helper functions =====
 class BoardDisplay:
     def __init__(self, board, screen, TILE_SIZE):
         self.TILE_SIZE = TILE_SIZE
@@ -15,23 +27,63 @@ class BoardDisplay:
     def _draw_grid(self ):
         overlay = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
 
+        self.board.get_tile(1, 1).destroy_tile()
         for row in range(Board.GRID_SIZE):
             for col in range(Board.GRID_SIZE):
                 tile = self.board.get_tile(row, col)
+                rect = tile_rect(row, col)
 
-                self._draw_active(row, col, )
-
-    
-    def _draw_active(self, row, col):
+                self._draw_platform(row, col)
+        
+    def _draw_platform(self, row, col):
+        platform_index = self._get_platform_index(row, col)
         x = row * self.TILE_SIZE
         y = col * self.TILE_SIZE
 
         is_dark = (row + col) % 2 == 0
 
         platform = Platform.get_platform(
-            0, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark
+            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark
         )
         self.screen.blit(platform, (x, y))
+
+    def _get_platform_index(self, row, col):
+        def is_platform(row, col):
+            if self.board.is_in_bounds(row, col):
+                return self.board.get_tile(row, col).is_active()
+            return False
+
+        if is_platform(row, col):
+            return 0
+
+        # Checks if the platform is surrounded by other platforms
+        top = is_platform(row, col - 1)
+        left = is_platform(row - 1, col)
+        bottom = is_platform(row, col + 1)
+        right = is_platform(row + 1, col)
+
+        neighbor_map = {
+            (True, True, True, True): 1,  # fully surrounded
+            (True, True, True, False): 2,  # top, left, bottom
+            (True, False, True, False): 3,  # top, bottom
+            (True, False, True, True): 4,  # top, right, bottom
+            (True, True, False, True): 5,  # top, left, right
+            (True, True, False, False): 6,  # top, left
+            (True, False, False, False): 7,  # top only
+            (True, False, False, True): 8,  # top, right
+            (False, True, False, True): 9,  # left, right
+            (False, True, False, False): 10,  # left only
+            (False, False, False, False): 11,  # fully empty
+            (False, False, False, True): 12,  # right only
+            (False, True, True, True): 13,  # left, bottom, right
+            (False, True, True, False): 14,  # left, bottom
+            (False, False, True, False): 15,  # bottom only
+            (False, False, True, True): 16,  # right, bottom
+        }
+
+        key = (top, left, bottom, right)
+        return neighbor_map.get(key)
+        
 
         
     

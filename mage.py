@@ -3,7 +3,7 @@ import pygame
 from spritesheet import SpriteSheet
 from animation import Animation
 
-class WizardStates(Enum):
+class MageStates(Enum):
     IDLE = auto()
     FRONT_WALK = auto()
     SIDE_WALK_RIGHT = auto()
@@ -13,55 +13,54 @@ class WizardStates(Enum):
     DEATH = auto()
 
 
-class Wizard:
+class Mage:
     FRAME_WIDTH = 93
     FRAME_HEIGHT = 77
 
-    def __init__(self, x, y, is_red=False, scale_w=120, scale_h=100, speed=4):
-        # Positional tracking
-        self.pos = pygame.Vector2(x, y)
+    def __init__(self, is_red=False, scale_w=120, scale_h=100, speed=4):
+        # Animation speed and scale
         self.speed = speed
         self.scale_w = scale_w
         self.scale_h = scale_h
 
-        self.state = WizardStates.IDLE
+        self.state = MageStates.IDLE
 
         color = "red" if is_red else "blue"
 
         idle_sheet = SpriteSheet(
             f"assets/{color}_wizard_idle.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
         front_walk_sheet = SpriteSheet(
             f"assets/{color}_wizard_front_walk.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
         back_walk_sheet = SpriteSheet(
             f"assets/{color}_wizard_back_walk.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
         side_walk_sheet = SpriteSheet(
             f"assets/{color}_wizard_side_walk.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
         attack_sheet = SpriteSheet(
             f"assets/{color}_wizard_attack.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
         death_sheet = SpriteSheet(
             f"assets/{color}_wizard_death.png",
-            Wizard.FRAME_WIDTH,
-            Wizard.FRAME_HEIGHT,
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
         )
 
         # Map animations to states
         self.animations = {
-            WizardStates.IDLE: Animation(
+            MageStates.IDLE: Animation(
                 idle_sheet,
                 row=0,
                 num_frames=4,
@@ -69,7 +68,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=150,
             ),
-            WizardStates.FRONT_WALK: Animation(
+            MageStates.FRONT_WALK: Animation(
                 front_walk_sheet,
                 row=0,
                 num_frames=4,
@@ -77,7 +76,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=120,
             ),
-            WizardStates.SIDE_WALK_RIGHT: Animation(
+            MageStates.SIDE_WALK_RIGHT: Animation(
                 side_walk_sheet,
                 row=0,
                 num_frames=4,
@@ -85,7 +84,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=120,
             ),
-            WizardStates.SIDE_WALK_LEFT: Animation(
+            MageStates.SIDE_WALK_LEFT: Animation(
                 side_walk_sheet,
                 row=0,
                 num_frames=4,
@@ -93,7 +92,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=120,
             ),
-            WizardStates.BACK_WALK: Animation(
+            MageStates.BACK_WALK: Animation(
                 back_walk_sheet,
                 row=0,
                 num_frames=4,
@@ -101,7 +100,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=120,
             ),
-            WizardStates.ATTACK: Animation(
+            MageStates.ATTACK: Animation(
                 attack_sheet,
                 row=0,
                 num_frames=6,
@@ -109,7 +108,7 @@ class Wizard:
                 target_height=scale_h,
                 speed=80,
             ),
-            WizardStates.DEATH: Animation(
+            MageStates.DEATH: Animation(
                 death_sheet,
                 row=0,
                 num_frames=8,
@@ -119,7 +118,7 @@ class Wizard:
             ),
         }
 
-    def set_state(self, new_state: WizardStates):
+    def set_state(self, new_state: Mage):
         if self.state != new_state:
             self.state = new_state
             self.animations[self.state].reset()
@@ -129,10 +128,8 @@ class Wizard:
         active_anim.update()
 
 
-    def draw(self, surface: pygame.Surface):
+    def draw(self, x, y, surface: pygame.Surface):
         raw_image = self.animations[self.state].get_current_frame()
 
-        image = pygame.transform.flip(raw_image, self.state == WizardStates.SIDE_WALK_LEFT, False)
-
-        rect = image.get_rect(center=(int(self.pos.x), int(self.pos.y)))
-        surface.blit(image, rect.topleft)
+        image = pygame.transform.flip(raw_image, self.state == MageStates.SIDE_WALK_LEFT, False)
+        surface.blit(image)

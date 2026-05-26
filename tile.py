@@ -1,11 +1,5 @@
 import random
-from enum import Enum, auto
-
-class TileState(Enum):
-    ACTIVE = auto()
-    EMPTY = auto()
-    FROZEN = auto()
-    WALL = auto()
+from enums import TileState
 
 class Tile:
     def __init__(self, row, col):

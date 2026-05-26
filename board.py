@@ -1,14 +1,6 @@
-from enum import Enum, auto
 import random
-from tile import Tile, TileState
-
-class Mage(Enum):
-    PLAYER = auto()
-    AI = auto()
-
-class Spell(Enum):
-    BURN = auto()
-    FREEZE = auto()   
+from tile import Tile
+from enums import TileState, Mage, Spell
 
 class Board:
     GRID_SIZE = 10
