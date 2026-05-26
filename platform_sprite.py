@@ -35,25 +35,3 @@ class Platform:
             return Platform.SPRITE_SHEET_LIGHT.get_image(x, y, width, height)
 
 
-if __name__ == "__main__":
-    pygame.init()
-    screen = pygame.display.set_mode((400, 400))
-    clock = pygame.time.Clock()
-
-    running = True
-
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-
-        screen.fill((255, 255, 255))
-
-        size = 68
-        image = Platform.get_platform(7, 68, 68, is_dark=True)
-        screen.blit(image, (100, 100))
-
-        pygame.display.flip()
-        clock.tick(60)
-
-    pygame.quit()

@@ -19,15 +19,14 @@ class Board:
         grid = [[Tile(r, c) for c in range(self.GRID_SIZE)] for r in range(self.GRID_SIZE)]
         
         # Generate walls on the edge of the board
-        for row in self.GRID_SIZE:
-            for col in self.GRID_SIZE:
+        for row in range(self.GRID_SIZE):
+            for col in range(self.GRID_SIZE):
                 if 0 == row == self.GRID_SIZE - 1 and 0 == col == self.GRID_SIZE - 1:
                     grid[row][col].state = TileState.WALL
 
-        
         # Set the mana of the starting point to 0
-        self.grid[self.player_pos[0]][self.player_pos[1]].mana = 0
-        self.grid[self.ai_pos[0]][self.player_pos[1]].mana = 0
+        grid[self.player_pos[0]][self.player_pos[1]].mana = 0
+        grid[self.ai_pos[0]][self.player_pos[1]].mana = 0
         
         return grid
 
@@ -134,6 +133,7 @@ class Board:
             old_row, old_col = self.player_pos
             self.player_mana += self.get_tile(row, col).mana
             self.player_pos = (row, col)
+
         elif who == Mage.AI:
             old_row, old_col = self.ai_pos
             self.ai_mana += self.get_tile(row, col).mana
