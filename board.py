@@ -2,6 +2,7 @@ import random
 from tile import Tile
 from enums import TileState, Spell, MageType
 from ui_util import GridConfig
+from mage import MageStates
 
 class Board:
     CUMULATIVE_TILE_GEN_CHANCE = 25
@@ -34,7 +35,7 @@ class Board:
                 else:
                     target.mana = random.randint(1, 3)
 
-    def __init__(self):
+    def __init__(self, player_sprite, ai_sprite):
         # Place the player on top-middle of the board
         self.player_pos = (1, GridConfig.GRID_SIZE // 2)
 
@@ -62,6 +63,9 @@ class Board:
             (-1, 1), # Upper-Right
             (-1, -1), # Upper-Left
         ]
+
+        self.player_sprite = player_sprite
+        self.ai_sprite = ai_sprite
 
     # ===== Helper Function =====
     def get_tile(self, row, col):        
@@ -138,9 +142,16 @@ class Board:
     def can_afford_burn(self, who: MageType):
         return (self.player_mana if who == MageType.PLAYER else self.ai_mana) >= 3
 
-    def apply_spell(self, who: MageType, spell, row, col):
+    def apply_spell(self, who: MageType,  spell: Spell, row, col):
         target = self.get_tile(row, col)
         print(f"{who.name} casts {spell.name} on tile ({row}, {col}) with state {target.state.name} and mana {target.mana}")
+
+        # Play animation for attack
+        if who == MageType.PLAYER:
+            self.player_sprite.set_state(MageStates.ATTACK)
+        else:
+            self.ai_sprite.set_state(MageStates.ATTACK)
+
         if spell == Spell.FREEZE:
             if target.is_frozen():
                 return
@@ -162,14 +173,14 @@ class Board:
                     self.ai_mana -= 3
                     self.ai_mana += 1 # Bonus +1 for breaking ice of frozen tile
 
-        else:
-            target.destroy_tile()
+            else:
+                target.destroy_tile()
 
-            if who == MageType.PLAYER:
-                self.player_mana -= 3
+                if who == MageType.PLAYER:
+                    self.player_mana -= 3
 
-            elif who == MageType.AI:
-                self.ai_mana -= 3
+                elif who == MageType.AI:
+                    self.ai_mana -= 3
             
     # ===== Per-turn changes ====
     

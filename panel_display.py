@@ -19,8 +19,8 @@ class PanelDisplay:
         y_pos = 12
 
         # Scorecards for each mage
-        y_pos = self._score_card(x_pos, y_pos, "PLAYER", self.game.board.player_mana, (255, 0, 0), self.game.phase == Phase.PLAYER_MOVE)
-        y_pos = self._score_card(x_pos, y_pos, "AI", self.game.board.ai_mana, (0, 0, 255), self.game.phase == Phase.AI_MOVE) 
+        y_pos = self._score_card(x_pos, y_pos, "PLAYER", self.game.board.player_mana, (0, 0, 255), self.game.phase == Phase.PLAYER_MOVE)
+        y_pos = self._score_card(x_pos, y_pos, "AI", self.game.board.ai_mana, (255, 0, 0), self.game.phase == Phase.AI_MOVE) 
 
         # Divider
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (x_pos, y_pos), (x_pos + self.PANEL_WIDTH - 28, y_pos))
@@ -39,7 +39,7 @@ class PanelDisplay:
         card = pygame.Rect(x, y, self.PANEL_WIDTH - 28, height)
         bg_color = lerp(color, PanelColors.PANEL_FILL, 0.8) 
 
-        draw_border(self.game.screen, bg_color, card, radius=10)
+        draw_border(self.game.screen, bg_color, card, radius=10, width = 0)
 
         background_color  = color if is_active else lerp(color, PanelColors.PANEL_LINE, 0.8)
         draw_border(self.game.screen, background_color, card, radius=10)
@@ -75,19 +75,18 @@ class PanelDisplay:
         is_sel = self.game.spell_choice == kind
 
         if not affordable:
-        #     # Can't afford this spell: greyed-out with "need 3" message
-        #     rr(self.screen, (50, 30, 30), rect, radius=9)
-        #     rr(self.screen, (100, 50, 50), rect, radius=9, width=2)
-        #     lb = self.font_sm.render(label + " [need 3]", True, (120, 70, 70))
-        #     self.screen.blit(lb, (rect.x + 10, rect.y + 16))
+            # Can't afford this spell: greyed-out with "need 3" message
+            draw_border(self.game.screen, (50, 30, 30), rect, radius=9)
+            draw_border(self.game.screen, (100, 50, 50), rect, radius=9, width=2)
+            text = self.game.font_sm.render(label + " [need 3]", True, (120, 70, 70))
+            self.game.screen.blit(text, (rect.x + 10, rect.y + 16))
             return
 
         # Normal active state: brighter if selected
         bg_color = lerp(color, (255, 255, 255), 0.25) if is_sel else lerp(color, PanelColors.PANEL_FILL, 0.35)
-
         border_color = (255, 255, 255) if is_sel else lerp(color, (255, 255, 255), 0.4)
 
-        draw_border(self.game.screen, bg_color, rect, radius=9)
+        draw_border(self.game.screen, bg_color, rect, radius=9, width =0)
         draw_border(self.game.screen, border_color, rect, radius=9, width=2)
         
         text = self.game.font_md.render(label, True, PanelColors.WHITE if is_sel else PanelColors.WHITE)

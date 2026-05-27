@@ -1,7 +1,7 @@
 import random
 import sys
 
-from enums import Phase
+from enums import Phase, TileState
 from board import Board
 from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
@@ -47,7 +47,7 @@ class Game:
         self.player = Mage(False)
         self.ai = Mage(True)
         self.phase =  Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
-        self.board = Board() # Starting board
+        self.board = Board(self.player, self.ai) # Starting board
         self.board_display = BoardDisplay(self)
         self.panel_display = PanelDisplay(self)
         self.hover_tile   = None # Grid position under the mouse cursor
@@ -85,7 +85,6 @@ class Game:
         for row in range(GridConfig.GRID_SIZE):
             for col in range(GridConfig.GRID_SIZE):
                 if tile_rect(row, col).collidepoint(px, py):
-
                     return row, col
 
         return None
@@ -114,27 +113,73 @@ class Game:
 
                 if self.phase == Phase.PLAYER_SPELL:
                     self._handle_player_click(mx, my)
-
-                    # INCORRECT LOOP
-                    self.board.turn_increase_cumulative_mana()
-                    self.board.turn_decrement_freeze_timer()
     
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
 
-        if self.phase == Phase.PLAYER_MOVE and clicked_tile in self.valid_player_move_set:
-            row, col = clicked_tile
-            self.board.apply_move(MageType.PLAYER, row, col)
-            self.update_valid_spells()
-            self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
+        if self.phase == Phase.PLAYER_MOVE:
+            if clicked_tile and clicked_tile in self.valid_player_move_set:
+                row, col = clicked_tile
+                self.board.apply_move(MageType.PLAYER, row, col)
+                self.update_valid_spells()
+                self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
+                self.spell_choice = None
+            else:
+                return # Invalid move, do nothing
         
-        elif self.phase == Phase.PLAYER_SPELL and clicked_tile in self.valid_player_spell_set:
-            row, col = clicked_tile
-            self.player.set_state(MageStates.ATTACK)
-            self.board.apply_spell(MageType.PLAYER, Spell.FREEZE, row, col)
-            self.update_valid_moves()
-            self.phase = Phase.PLAYER_MOVE
+        elif self.phase == Phase.PLAYER_SPELL:
+            freeze_btn, burn_btn = self.panel_display._btn_rects()
 
+            # Clicked the FREEZE button
+            if freeze_btn.collidepoint(mx, my):
+                self.spell_choice = Spell.FREEZE
+                return
+
+            # Clicked the BURN button
+            if burn_btn.collidepoint(mx, my):
+                if not self.board.can_afford_burn(MageType.PLAYER):
+                    return
+                
+                self.spell_choice = Spell.BURN
+                return
+
+            # Click a tile after selecting a spell
+            if clicked_tile:
+
+                if not self.spell_choice:
+                    return # No spell selected, do nothing
+
+                if clicked_tile not in self.valid_player_spell_set:
+                    return # Invalid spell target, do nothing
+                    
+                row, col = clicked_tile
+
+                if self.board.get_tile(row, col).is_frozen() and self.spell_choice == Spell.FREEZE:
+                    return # Can't freeze a tile that's already frozen, do nothing
+
+                if self.spell_choice == Spell.BURN and not self.board.can_afford_burn(MageType.PLAYER):
+                    self.spell_choice = None # Reset spell choice since burn can't be cast
+                    return # DOUBLE CHECK. Can't afford burn, do nothing
+
+                
+                self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
+                self._end_player_turn()
+        
+        else:
+            return # Not player's turn, do nothing
+
+    def _end_player_turn(self):
+        self.board.turn_increase_cumulative_mana()
+        self.board.turn_decrement_freeze_timer()
+
+        # Check if AI is trapped
+        # if not self.board.valid_moves(self.board.ai_pos):
+        #     # self.state.victory_lap("player")
+        #     # self._finish()
+        #     return
+
+        self.phase = Phase.PLAYER_MOVE # Transition to AI's turn after player finishes spell phase
+        self.update_valid_moves()
 
     def _update_animations(self):
         self.player.update()
