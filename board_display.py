@@ -34,10 +34,12 @@ class BoardDisplay:
             for col in range(GridConfig.GRID_SIZE):
                 tile = game.board.get_tile(row, col)
                 rect = tile_rect(row, col)
+                text = self.game.font_md.render(str(tile.mana), True, (255, 255, 255))
 
                 self._draw_platform(row, col)
 
                 if tile.is_active() or tile.is_frozen():
+                    self.game.screen.blit(text, rect)
                     self._draw_active_tile_overlay(row, col, rect, overlay)
 
 
@@ -56,8 +58,10 @@ class BoardDisplay:
             overlay.fill(HighlightColors.MOVE_FILL)
             game.screen.blit(overlay, rect.topleft)
             draw_border(game.screen, HighlightColors.MOVE_BORDER, rect)
+        elif self.game.spell_choice and game.phase == Phase.PLAYER_SPELL and (row, col) in game.valid_player_spell_set:
+            if self.game.spell_choice == Spell.FREEZE and self.game.board.get_tile(row, col).is_frozen():
+                return
 
-        elif game.phase == Phase.PLAYER_SPELL and (row, col) in game.valid_player_spell_set:
             overlay.fill(HighlightColors.SPELL_FILL)
             game.screen.blit(overlay, rect.topleft)
             draw_border(game.screen, HighlightColors.SPELL_BORDER, rect)

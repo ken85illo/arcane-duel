@@ -21,4 +21,16 @@ class TileState(Enum):
     FROZEN = auto()
     WALL = auto()
 
+class AIState(Enum):
+    THINKING = auto()
+    MOVING = auto()
+    CASTING_SPELL = auto()
+    FINISHING_TURN = auto()
+
+class Winner(Enum):
+    PLAYER = auto()
+    AI = auto()
+    DRAW = auto()
+    
+
     

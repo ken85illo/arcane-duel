@@ -31,6 +31,15 @@ class Tile:
         self.state = TileState.ACTIVE
         self.freeze_timer = 0
 
+    # Create tile copy
+    def copy(self):
+        tile_copy = Tile(self.row, self.col)
+        tile_copy.state = self.state
+        tile_copy.mana = self.mana
+        tile_copy.is_cumulative = self.is_cumulative
+        tile_copy.freeze_timer = self.freeze_timer
+        return tile_copy
+
     # Freeze Countdown
     def freeze_decrement(self):
         if self.state == TileState.FROZEN:

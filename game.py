@@ -1,7 +1,8 @@
 import random
 import sys
 
-from enums import Phase, TileState
+from mcts import MCTS
+from enums import Phase, TileState, AIState, Winner
 from board import Board
 from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
@@ -59,10 +60,14 @@ class Game:
         # self.log = [] # Combat log entries (max 9 lines)
         # self.flash_msg    = ""             # Short message shown in the center of the board
         # self.flash_timer  = 0             # How many frames the flash message remains visible
-        # self.ai_busy      = False
+        
+        self.ai_busy = False
+        self.ai_delay = 0
+        self.ai_stage = AIState.THINKING
+        self.ai_action  = None
+        self.mcts = MCTS()
 
         self.update_valid_moves()
-        self.update_valid_spells()
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
@@ -94,9 +99,6 @@ class Game:
 
         # Tracks tile currently hovered at (future use: highlight tile selection) 
         self.hover_tile = self._tile_at(mx, my)
-        is_inside_val = self.hover_tile in self.valid_player_move_set
-        # print(self.valid_player_move_set)
-        # print(f"Player pos: {self.board.player_pos}\nHovering over tile: {self.hover_tile} inside {is_inside_val}")
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -173,13 +175,91 @@ class Game:
         self.board.turn_decrement_freeze_timer()
 
         # Check if AI is trapped
-        # if not self.board.valid_moves(self.board.ai_pos):
-        #     # self.state.victory_lap("player")
-        #     # self._finish()
-        #     return
+        if not self.board.valid_mage_moves(*self.board.ai_pos):
+            self.state.victory_lap()
+            self._finish()
+            return
 
-        self.phase = Phase.PLAYER_MOVE # Transition to AI's turn after player finishes spell phase
-        self.update_valid_moves()
+        # Start the AI's turn
+        self.phase = Phase.AI_MOVE
+        self.ai_busy   = True
+        self.ai_stage  = AIState.THINKING
+        self.ai_delay  = 0
+        self.ai_action = None
+    
+    def _finish(self):
+        player_mana, ai_mana = self.board.player_mana, self.board.ai_mana
+        self.winner = Winner.PLAYER if player_mana > ai_mana else (Winner.AI if ai_mana > player_mana else Winner.DRAW)
+        self.phase = Phase.GAME_OVER
+    
+    # ===== AI Logic =====
+
+    DELAY_THINK  = 45
+    DELAY_MOVE   = 40
+    DELAY_SPELL  = 50
+    DELAY_FINISH = 10
+
+    def _update(self):
+        if self.phase != Phase.AI_MOVE:
+            return
+
+        if self.ai_delay > 0:
+            self.ai_delay -= 1
+            return
+        
+        if self.ai_stage == AIState.THINKING:
+            best_action = self.mcts.mcts_best_action(self.board)
+
+            if not best_action:
+                # if AI is stuck player wins via Victory Lap
+                self.board.victory_lap()
+
+                return
+            
+            self.ai_delay = self.DELAY_THINK
+            self.ai_action = best_action
+            self.ai_stage = AIState.MOVING
+            return
+        
+        if self.ai_stage == AIState.MOVING:
+            move, spell, target = self.ai_action
+            self.board.apply_move(MageType.AI, *move)
+            self.ai_delay = self.DELAY_MOVE
+            self.ai_stage = AIState.CASTING_SPELL
+            return
+
+        if self.ai_stage == AIState.CASTING_SPELL:
+            move, spell, target = self.ai_action
+
+            if spell == Spell.BURN and not self.board.can_afford_burn(MageType.AI):
+                spell = Spell.FREEZE # Downgrade to freeze if burn isn't affordable
+            
+            if target:
+                tile = self.board.get_tile(*target)
+                self.board.apply_spell(MageType.AI, spell, *target)
+
+            self.ai_delay = self.DELAY_SPELL
+            self.ai_stage = AIState.FINISHING_TURN
+            return
+        
+        if self.ai_stage == AIState.FINISHING_TURN:
+            self.board.turn_increase_cumulative_mana()
+            self.board.turn_decrement_freeze_timer()
+            self.ai_delay = self.DELAY_FINISH
+            self.ai_action = None
+            self.ai_busy = False
+            self.ai_stage = AIState.THINKING
+            self.update_valid_moves()
+
+            # Check if player is trapped
+            if not self.board.valid_mage_moves(*self.board.player_pos):
+                self.state.victory_lap(MageType.AI)
+                self._finish()
+                return
+            
+            self.phase = Phase.PLAYER_MOVE
+        
+
 
     def _update_animations(self):
         self.player.update()
@@ -190,6 +270,7 @@ class Game:
     def run(self):
         while True:
             self._events()
+            self._update()
             self.board_display.draw()
             self.panel_display.draw()
             

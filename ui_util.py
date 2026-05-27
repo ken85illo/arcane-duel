@@ -10,6 +10,10 @@ class PanelColors:
     PANEL_FILL = (20, 22, 40)
     PANEL_LINE = (50, 54, 88)
 
+    # Mage Colors
+    PLAYER    = ( 70, 130, 230)  # Blue Mage (player)
+    AI        = (220,  55,  55)  # Red Mage (AI)
+
     # UI text and button colours
     GOLD      = (255, 210,  55)  
     TEXT      = (220, 220, 228)  

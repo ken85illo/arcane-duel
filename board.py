@@ -1,8 +1,10 @@
+from collections import deque
 import random
 from tile import Tile
 from enums import TileState, Spell, MageType
 from ui_util import GridConfig
 from mage import MageStates
+from bfs_board import breadth_first_search
 
 class Board:
     CUMULATIVE_TILE_GEN_CHANCE = 25
@@ -196,7 +198,31 @@ class Board:
                 # Chance to increase mana of cumulative mana tile
                 tile.cumulate_mana()
     
+    # ===== Create Board Copy for MCTS =====
+    def create_board_copy(self):
+        board_copy = Board.__new__(Board)  # Create a new instance without calling __init__
+        board_copy.grid = [
+            [self.get_tile(row, col).copy() for col in range(GridConfig.GRID_SIZE)] for row in range(GridConfig.GRID_SIZE)
+        ]
+        board_copy.player_pos = self.player_pos
+        board_copy.ai_pos = self.ai_pos
+        board_copy.player_mana = self.player_mana
+        board_copy.ai_mana = self.ai_mana
+        board_copy.directions = self.directions.copy()
+        board_copy.player_sprite = None
+        board_copy.ai_sprite = None
 
+        return board_copy
+    
+    
+    def victory_lap(self, who: MageType):
+        pos = self.player_pos if who == MageType.PLAYER else self.ai_pos
+        _, reachable_mana = breadth_first_search(self, pos)
+        
+        if who == MageType.PLAYER:
+            self.player_mana += reachable_mana
+        else:
+            self.ai_mana += reachable_mana
     
                                 
 
