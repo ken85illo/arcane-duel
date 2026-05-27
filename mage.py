@@ -125,14 +125,19 @@ class Mage:
             ),
         }
 
-    def set_state(self, new_state: Mage):
+    def set_state(self, new_state: MageStates):
         if self.state != new_state:
             self.state = new_state
             self.animations[self.state].reset()
 
     def update(self):
         active_anim = self.animations[self.state]
+        prev_frame = active_anim.current_frame
+
         active_anim.update()
+
+        if (self.state == MageStates.ATTACK and active_anim.current_frame < prev_frame):
+            self.set_state(MageStates.IDLE)
 
 
     def draw(self, x, y, surface: pygame.Surface):

@@ -37,7 +37,6 @@ class Animation:
 
             self.frames[i] = image
             
-        
 
     def update(self):
         current_time = pygame.time.get_ticks()

@@ -23,15 +23,13 @@ class Game:
     def _new_game(self):
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.player.set_state(MageStates.ATTACK)
-
         self.phase =  Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
         self.board = Board() # Starting board
-        self.board_display = BoardDisplay(self.board, self.screen, self.player, self.ai,  GridConfig.TILE_SIZE, self.phase)
+        self.board_display = BoardDisplay(self)
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
-        self.spell_choice = None
+        self.spell_choice = Spell.FREEZE
         self.winner = None     
         # == To Be Added
         # self.log = [] # Combat log entries (max 9 lines)
@@ -107,9 +105,15 @@ class Game:
         
         elif self.phase == Phase.PLAYER_SPELL and clicked_tile in self.valid_player_spell_set:
             row, col = clicked_tile
+            self.player.set_state(MageStates.ATTACK)
             self.board.apply_spell(MageType.PLAYER, Spell.FREEZE, row, col)
             self.update_valid_moves()
             self.phase = Phase.PLAYER_MOVE
+
+
+    def _update_animations(self):
+        self.player.update()
+        self.ai.update()
 
 
     # ===== Main Game Loop =====
@@ -120,8 +124,7 @@ class Game:
             
             pygame.display.flip()
             self.clock.tick(60)
-            self.player.update()
-            self.ai.update()
+            self._update_animations()
 
 if __name__ == "__main__":
     Game().run()

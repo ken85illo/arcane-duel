@@ -2,9 +2,22 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import GridConfig, Phase
+from enums import GridConfig, Phase, Spell
 
-# ===== HELPER FUNCTION ======
+
+# ===== HIGHLIGHT COLORS ======
+class HighlightColors:
+    MOVE_FILL = (220, 160, 20, 65)
+    MOVE_BORDER = (240, 180, 30)
+
+    SPELL_FILL = (230, 50, 230, 60)  
+    SPELL_BORDER = (255, 100, 255)  
+
+    HOVER_FILL= (255, 255, 255,  45)
+
+
+
+# ===== HELPER FUNCTIONS ======
 def tile_rect(row, col):
     # Get the rect from the tile
     return pygame.Rect(
@@ -14,62 +27,85 @@ def tile_rect(row, col):
         GridConfig.TILE_SIZE,
     )
 
+def draw_border(screen, color, rect, radius=10, width=2):
+    pygame.draw.rect(screen, color, rect, width, border_radius=radius)
+
+
 # ===== Helper functions =====
 class BoardDisplay:
-    def __init__(self, board, screen, player, ai, TILE_SIZE, phase):
-        self.player = player
-        self.ai = ai
-        
-        self.TILE_SIZE = TILE_SIZE
-        self.board = board
-        self.screen = screen
+    def __init__(self, game):
+        self.game = game
+        self.TILE_SIZE = GridConfig.TILE_SIZE
         self.font = pygame.font.SysFont("Arial", 36) 
         
-        self.phase = phase
 
     def draw(self):
         self._draw_grid()
 
     def _draw_grid(self):
+        game = self.game
         overlay = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+
         for row in range(GridConfig.GRID_SIZE):
             for col in range(GridConfig.GRID_SIZE):
-                tile = self.board.get_tile(row, col)
+                tile = game.board.get_tile(row, col)
                 rect = tile_rect(row, col)
                 text_surface = self.font.render(str(tile.mana), True, (255, 255, 255))
 
-                    
                 self._draw_platform(row, col)
+
+                if tile.is_active() or tile.is_frozen():
+                    self._draw_active_tile_overlay(row, col, rect, overlay)
+
 
 
         # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)
-        player_row, player_col = self.board.player_pos
-        self.player.draw(player_col * self.TILE_SIZE,player_row * self.TILE_SIZE, self.screen)
-        print(self.board.player_mana)
+        player_row, player_col = game.board.player_pos
+        game.player.draw(player_col * self.TILE_SIZE,player_row * self.TILE_SIZE, game.screen)
 
-        ai_row, ai_col = self.board.ai_pos
-        self.ai.draw(ai_col * self.TILE_SIZE, ai_row * self.TILE_SIZE,self.screen)
+        ai_row, ai_col = game.board.ai_pos
+        game.ai.draw(ai_col * self.TILE_SIZE, ai_row * self.TILE_SIZE,game.screen)
 
+    def _draw_active_tile_overlay(self, row, col, rect, overlay):
+        game = self.game
+
+        # Highlight the possible movements for player
+        if game.phase == Phase.PLAYER_MOVE and (row, col) in game.valid_player_move_set:
+            overlay.fill(HighlightColors.MOVE_FILL)
+            game.screen.blit(overlay, rect.topleft)
+            draw_border(game.screen, HighlightColors.MOVE_BORDER, rect)
+
+        elif game.phase == Phase.PLAYER_SPELL and (row, col) in game.valid_player_spell_set:
+            overlay.fill(HighlightColors.SPELL_FILL)
+            game.screen.blit(overlay, rect.topleft)
+            draw_border(game.screen, HighlightColors.SPELL_BORDER, rect)
+
+
+        if (row, col) == game.hover_tile:
+            overlay.fill(HighlightColors.HOVER_FILL)
+            game.screen.blit(overlay, rect.topleft)
 
         
     def _draw_platform(self, row, col):
+        game = self.game
         platform_index = self._get_platform_index(row, col)
+
         # Map grid coordinates to screen coordinates: column -> x, row -> y
         x = col * self.TILE_SIZE
         y = row * self.TILE_SIZE
 
-        is_frozen = self.board.get_tile(row, col).is_frozen()
+        is_frozen = game.board.get_tile(row, col).is_frozen()
         is_dark = (row + col) % 2 == 0
 
         platform = Platform.get_platform(
             platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen
         )
-        self.screen.blit(platform, (x, y))
+        game.screen.blit(platform, (x, y))
 
     def _get_platform_index(self, row, col):
         def is_platform(row, col):
-            if self.board.is_in_bounds(row, col):
-                tile = self.board.get_tile(row, col)
+            if self.game.board.is_in_bounds(row, col):
+                tile = self.game.board.get_tile(row, col)
                 return tile.is_active() or tile.is_frozen()
             return False
 
