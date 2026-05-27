@@ -20,17 +20,22 @@ class MCTSNode:
         return self._untried
 
     def _generate_actions(self, board):
+        actions = []
         moves = board.valid_mage_moves(*board.ai_pos)
-        targets = board.valid_spell_targets(*board.ai_pos)
 
-        freeze = [
-            (move, Spell.FREEZE, target) for move in moves for target in targets 
-        ]
-        burn  = [
-            (move, Spell.BURN, target) for move in moves for target in targets
-        ]
+        for move in moves:
+            targets = board.valid_spell_targets(*move)
+            move_mana = board.ai_mana + board.get_tile(*move).mana
 
-        return freeze + burn
+            # Add a move-only action even if there are no valid spell targets.
+            actions.append((move, Spell.FREEZE, None))
+
+            for target in targets:
+                actions.append((move, Spell.FREEZE, target))
+                if move_mana >= 3:
+                    actions.append((move, Spell.BURN, target))
+
+        return actions
         
         
     def ucb1(self):

@@ -169,11 +169,11 @@ class Board:
 
                 if who == MageType.PLAYER:
                     self.player_mana -= 3
-                    self.player_mana += 1 # Bonus +1 for breaking ice of frozen tile
+                    self.player_mana += target.mana # Bonus +1 for breaking ice of frozen tile
 
                 elif who == MageType.AI:
                     self.ai_mana -= 3
-                    self.ai_mana += 1 # Bonus +1 for breaking ice of frozen tile
+                    self.ai_mana += target.mana # Bonus +1 for breaking ice of frozen tile
 
             else:
                 target.destroy_tile()

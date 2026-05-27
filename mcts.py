@@ -5,7 +5,7 @@ from enums import Spell, MageType, Spell
 from collections import deque
 
 class MCTS:
-    def __init__(self, max_iterations=1000):
+    def __init__(self, max_iterations=5000):
         self.max_iterations = max_iterations
 
         
@@ -45,13 +45,21 @@ class MCTS:
 
     def _rollout(self, board, action: tuple[tuple[int, int], Spell, tuple[int, int]]):
         move, spell, target = action
-        
-        board.apply_move(MageType.AI, *move)    
+
+        board.apply_move(MageType.AI, *move)
         valid_targets = board.valid_spell_targets(*board.ai_pos)
-        target = target if target in valid_targets else (random.choice(valid_targets) if valid_targets else None)
+
+        if target is not None and target not in valid_targets:
+            if valid_targets:
+                target = random.choice(valid_targets)
+            else:
+                target = None
 
         if target:
-            tile = board.get_tile(*move)
+            if spell == Spell.BURN and not board.can_afford_burn(MageType.AI):
+                return
+
+            tile = board.get_tile(*target)
             if spell == Spell.FREEZE:
                 if not tile.is_frozen():
                     tile.freeze_tile()
@@ -84,14 +92,18 @@ class MCTS:
             self._backpropagation(node, score)
 
         if not root.children:
-            # Pick a random valid action of MCTS Found nothing
             moves = board.valid_mage_moves(*board.ai_pos)
-            targets = board.valid_spell_targets(*board.ai_pos)
+            if not moves:
+                return None
 
-            if moves and targets:
-                return (random.choice(moves), Spell.FREEZE, random.choice(targets))
+            move = random.choice(moves)
+            targets = board.valid_spell_targets(*move)
+            target = random.choice(targets) if targets else None
 
-            return None
+            if target is not None and board.ai_mana + board.get_tile(*move).mana >= 3:
+                return (move, Spell.BURN, target)
+
+            return (move, Spell.FREEZE, target)
         
         return root.most_visited().action
 

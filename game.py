@@ -176,7 +176,7 @@ class Game:
 
         # Check if AI is trapped
         if not self.board.valid_mage_moves(*self.board.ai_pos):
-            self.state.victory_lap()
+            self.board.victory_lap()
             self._finish()
             return
 
@@ -231,6 +231,8 @@ class Game:
         if self.ai_stage == AIState.CASTING_SPELL:
             move, spell, target = self.ai_action
 
+            print(f"AI Action: Move to {move}, Spell: {spell}, Target: {target}")
+
             if spell == Spell.BURN and not self.board.can_afford_burn(MageType.AI):
                 spell = Spell.FREEZE # Downgrade to freeze if burn isn't affordable
             
@@ -253,7 +255,7 @@ class Game:
 
             # Check if player is trapped
             if not self.board.valid_mage_moves(*self.board.player_pos):
-                self.state.victory_lap(MageType.AI)
+                self.board.victory_lap(MageType.AI)
                 self._finish()
                 return
             
