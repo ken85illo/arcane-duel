@@ -6,7 +6,9 @@ from board import Board
 from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
 from board import Board
-from enums import MageType, GridConfig, Spell
+from enums import MageType, Spell
+
+from ui_util import GridConfig
 from panel_display import PanelDisplay
 import pygame
 
@@ -14,12 +16,28 @@ class Game:
     PANEL_WIDTH = 400
     SCREEN_WIDTH = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE + PANEL_WIDTH
     SCREEN_HEIGHT = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE
+    
+    def _make_font(self, size, bold=False):
+        for name in ("dejavusans", "liberationsans", "freesans", "droidsans"):
+            try:
+                f = pygame.font.SysFont(name, size, bold=bold)
+                if f:
+                    return f
+            except Exception:
+                pass
+        return pygame.font.Font(None, size + 6)  # Fall back to pygame's built-in bitmap font
 
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("Arcane Duel")
         self.screen = pygame.display.set_mode (
             (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
+        # Font sizes for different UI elements
+        self.font_xl = self._make_font(38, True)  # Scores, game-over text
+        self.font_lg = self._make_font(22, True)  # Header title
+        self.font_md = self._make_font(16)             # Spell buttons, mana numbers
+        self.font_sm = self._make_font(13)             # Legend, combat log, labels
 
         self.clock = pygame.time.Clock()
         self._new_game()

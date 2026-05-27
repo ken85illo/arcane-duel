@@ -1,6 +1,6 @@
 from enum import Enum, auto
 import pygame
-from enums import GridConfig
+from ui_util import GridConfig
 from spritesheet import SpriteSheet
 from animation import Animation
 

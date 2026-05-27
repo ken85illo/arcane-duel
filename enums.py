@@ -21,7 +21,4 @@ class TileState(Enum):
     FROZEN = auto()
     WALL = auto()
 
-class GridConfig:
-    TILE_SIZE = 80
-    GRID_SIZE = 11
     

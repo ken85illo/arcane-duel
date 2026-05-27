@@ -1,6 +1,7 @@
 import random
 from tile import Tile
-from enums import TileState, Spell, GridConfig, MageType
+from enums import TileState, Spell, MageType
+from ui_util import GridConfig
 
 class Board:
     CUMULATIVE_TILE_GEN_CHANCE = 25

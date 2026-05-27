@@ -2,19 +2,8 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import GridConfig, Phase, Spell
-
-
-# ===== HIGHLIGHT COLORS ======
-class HighlightColors:
-    MOVE_FILL = (220, 160, 20, 65)
-    MOVE_BORDER = (240, 180, 30)
-
-    SPELL_FILL = (230, 50, 230, 60)  
-    SPELL_BORDER = (255, 100, 255)  
-
-    HOVER_FILL= (255, 255, 255,  45)
-
+from enums import Phase, Spell
+from ui_util import GridConfig, HighlightColors, draw_border, lerp
 
 
 # ===== HELPER FUNCTIONS ======
@@ -27,18 +16,13 @@ def tile_rect(row, col):
         GridConfig.TILE_SIZE,
     )
 
-def draw_border(screen, color, rect, radius=10, width=2):
-    pygame.draw.rect(screen, color, rect, width, border_radius=radius)
-
 
 # ===== Helper functions =====
 class BoardDisplay:
     def __init__(self, game):
         self.game = game
         self.TILE_SIZE = GridConfig.TILE_SIZE
-        self.font = pygame.font.SysFont("Arial", 36) 
         
-
     def draw(self):
         self._draw_grid()
 
@@ -50,13 +34,11 @@ class BoardDisplay:
             for col in range(GridConfig.GRID_SIZE):
                 tile = game.board.get_tile(row, col)
                 rect = tile_rect(row, col)
-                text_surface = self.font.render(str(tile.mana), True, (255, 255, 255))
 
                 self._draw_platform(row, col)
 
                 if tile.is_active() or tile.is_frozen():
                     self._draw_active_tile_overlay(row, col, rect, overlay)
-
 
 
         # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)

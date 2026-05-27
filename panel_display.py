@@ -1,19 +1,99 @@
-from enums import GridConfig
+from ui_util import GridConfig, PanelColors, draw_border, lerp
+from enums import Phase, Spell, MageType
+from board_display import draw_border
 import pygame
 
-class PanelColors:
-    PANEL_FILL = (20, 22, 40)
-    PANEL_LINE = (50, 54, 88)
-    
 
 class PanelDisplay:
     def __init__(self, game):
         self.game = game
         self.PANEL_WIDTH = game.PANEL_WIDTH
         self.panel_position_x = GridConfig.TILE_SIZE * GridConfig.GRID_SIZE
-        
+
+
     def draw(self):
         pygame.draw.rect(self.game.screen, PanelColors.PANEL_FILL, pygame.Rect(self.panel_position_x, 0, self.PANEL_WIDTH, self.game.SCREEN_HEIGHT))
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (self.panel_position_x, 0), (self.panel_position_x, self.game.SCREEN_HEIGHT), 2)        
         
+        x_pos = self.panel_position_x + 14 
+        y_pos = 12
+
+        # Scorecards for each mage
+        y_pos = self._score_card(x_pos, y_pos, "PLAYER", self.game.board.player_mana, (255, 0, 0), self.game.phase == Phase.PLAYER_MOVE)
+        y_pos = self._score_card(x_pos, y_pos, "AI", self.game.board.ai_mana, (0, 0, 255), self.game.phase == Phase.AI_MOVE) 
+
+        # Divider
+        pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (x_pos, y_pos), (x_pos + self.PANEL_WIDTH - 28, y_pos))
+        y_pos += 10
         
+        frozen, burn = self._btn_rects()
+
+        can_afford_burn = self.game.board.can_afford_burn(MageType.PLAYER)
+        is_player_turn = self.game.phase == Phase.PLAYER_SPELL
+
+        self._spell_btn(frozen, Spell.FREEZE, is_player_turn, "Freeze (-0)", PanelColors.BTN_FRZ, True)
+        self._spell_btn(burn, Spell.BURN, is_player_turn, "Burn (-3)", PanelColors.BTN_BURN, can_afford_burn)
+    
+    def _score_card(self, x, y, label, mana, color, is_active = False):
+        height = 74
+        card = pygame.Rect(x, y, self.PANEL_WIDTH - 28, height)
+        bg_color = lerp(color, PanelColors.PANEL_FILL, 0.8) 
+
+        draw_border(self.game.screen, bg_color, card, radius=10)
+
+        background_color  = color if is_active else lerp(color, PanelColors.PANEL_LINE, 0.8)
+        draw_border(self.game.screen, background_color, card, radius=10)
+        
+        who_text = self.game.font_sm.render(label, True, color)
+        mana_score_text = self.game.font_xl.render(str(max(0, mana)), True, color)
+        mana_caption_text = self.game.font_sm.render("mana", True, color)
+
+        self.game.screen.blit(who_text, (x + 10, y + 7))
+        self.game.screen.blit(mana_score_text, (x + 10, y + 24))       
+        self.game.screen.blit(mana_caption_text, (x + 10 + mana_score_text.get_width() + 5, y + 44))
+
+        return y + height + 10
+
+    def _btn_rects(self):
+        board_width = GridConfig.TILE_SIZE * GridConfig.GRID_SIZE 
+        button_x = board_width + 12
+
+        return (
+            pygame.Rect(button_x, self.game.SCREEN_HEIGHT - 152, self.game.PANEL_WIDTH - 24, 50),
+            pygame.Rect(button_x, self.game.SCREEN_HEIGHT -  94, self.game.PANEL_WIDTH - 24, 50)
+        )
+
+    def _spell_btn(self, rect, kind: Spell, phase_active, label, color, affordable):
+        if not phase_active:
+            # Not the spell phase: just show a dim placeholder
+            draw_border(self.game.screen,PanelColors.BTN_DIM, rect, radius=10)
+            
+            text = self.game.font_sm.render(label, True, PanelColors.TEXT_DIM)
+            self.game.screen.blit(text, (rect.x + 10, rect.y + 16))
+            return
+
+        is_sel = self.game.spell_choice == kind
+
+        if not affordable:
+        #     # Can't afford this spell: greyed-out with "need 3" message
+        #     rr(self.screen, (50, 30, 30), rect, radius=9)
+        #     rr(self.screen, (100, 50, 50), rect, radius=9, width=2)
+        #     lb = self.font_sm.render(label + " [need 3]", True, (120, 70, 70))
+        #     self.screen.blit(lb, (rect.x + 10, rect.y + 16))
+            return
+
+        # Normal active state: brighter if selected
+        bg_color = lerp(color, (255, 255, 255), 0.25) if is_sel else lerp(color, PanelColors.PANEL_FILL, 0.35)
+
+        border_color = (255, 255, 255) if is_sel else lerp(color, (255, 255, 255), 0.4)
+
+        draw_border(self.game.screen, bg_color, rect, radius=9)
+        draw_border(self.game.screen, border_color, rect, radius=9, width=2)
+        
+        text = self.game.font_md.render(label, True, PanelColors.WHITE if is_sel else PanelColors.WHITE)
+        self.game.screen.blit(text, (rect.x + 10, rect.y + 14))
+
+        
+
+        
+
