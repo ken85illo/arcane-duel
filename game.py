@@ -7,14 +7,19 @@ from board_display import BoardDisplay, tile_rect
 from mage import Mage, MageStates
 from board import Board
 from enums import MageType, GridConfig, Spell
+from panel_display import PanelDisplay
 import pygame
 
 class Game:
+    PANEL_WIDTH = 400
+    SCREEN_WIDTH = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE + PANEL_WIDTH
+    SCREEN_HEIGHT = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE
+
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("Arcane Duel")
         self.screen = pygame.display.set_mode (
-            (GridConfig.TILE_SIZE * GridConfig.GRID_SIZE, GridConfig.TILE_SIZE * GridConfig.GRID_SIZE))
+            (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
 
         self.clock = pygame.time.Clock()
         self._new_game()
@@ -26,6 +31,7 @@ class Game:
         self.phase =  Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
         self.board = Board() # Starting board
         self.board_display = BoardDisplay(self)
+        self.panel_display = PanelDisplay(self)
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
@@ -88,11 +94,12 @@ class Game:
                 if self.phase == Phase.PLAYER_MOVE:  
                     self._handle_player_click(mx, my)
 
+                if self.phase == Phase.PLAYER_SPELL:
+                    self._handle_player_click(mx, my)
+
                     # INCORRECT LOOP
                     self.board.turn_increase_cumulative_mana()
                     self.board.turn_decrement_freeze_timer()
-                if self.phase == Phase.PLAYER_SPELL:
-                    self._handle_player_click(mx, my)
     
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
@@ -121,6 +128,7 @@ class Game:
         while True:
             self._events()
             self.board_display.draw()
+            self.panel_display.draw()
             
             pygame.display.flip()
             self.clock.tick(60)
