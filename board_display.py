@@ -29,7 +29,8 @@ class BoardDisplay:
                 self._draw_platform(row, col)
 
                 if tile.is_active() or tile.is_frozen():
-                    self.game.screen.blit(text, rect)
+                    if tile.mana > 0:
+                        self.game.screen.blit(text, rect)
                     self._draw_active_tile_overlay(row, col, rect, overlay)
 
     def _draw_mages(self):

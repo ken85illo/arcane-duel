@@ -6,12 +6,12 @@ from enums import Spell, MageType, Spell
 from collections import deque
 
 class MCTS:
-    def __init__(self, simulation_depth = 6, max_iterations=3000):
+    def __init__(self, simulation_depth = 10, max_iterations=3000):
         self.max_iterations = max_iterations
         self.simulation_depth = simulation_depth
 
     def mcts_best_action(self, board):
-        root = MCTSNode(turn=MageType.PLAYER, board=board)
+        root = MCTSNode(turn=MageType.AI)
         
         for i in range(self.max_iterations):
             node = root
@@ -52,7 +52,7 @@ class MCTS:
     def _selection(self, node, board):
         while node.children and not self._untried_actions(node, board):
             node = node.best_child()
-            self._apply_move(board, node.turn, node.action)
+            self._apply_move(board, node.parent.turn, node.action)
 
         return node, board
     
@@ -65,9 +65,9 @@ class MCTS:
             action = random.choice(untried)
             next_turn = node.next_turn()
 
-            self._apply_move(board, next_turn, action)
+            self._apply_move(board, node.turn, action)
 
-            child = MCTSNode(next_turn, board=board, action=action, parent=node)
+            child = MCTSNode(next_turn, action=action, parent=node)
             node.children.append(child)
             node = child
 
@@ -76,16 +76,15 @@ class MCTS:
     # Rollout plays random moves which will be used for simulation
     def _rollout(self, current_turn, board):
         for _ in range(self.simulation_depth):  
-            temp_node = MCTSNode(turn=current_turn, board=board)
+            temp_node = MCTSNode(turn=current_turn)
             actions = temp_node.generate_actions(board)
 
             if not actions:
                 break
 
             action = random.choice(actions)
-            next_turn = temp_node.next_turn()
-            self._apply_move(board, next_turn, action)
-            current_turn =  next_turn
+            self._apply_move(board, current_turn, action)
+            current_turn =  temp_node.next_turn()
         
         return board
 
@@ -136,6 +135,9 @@ class MCTS:
                     tile.freeze_tile()
             elif spell == Spell.BURN:
                 tile.destroy_tile()
+        
+        board.turn_decrement_freeze_timer()
+        board.turn_increase_cumulative_mana()
 
     def _bfs_both(self, board): 
         ai_reachable_mana = breadth_first_search(board, board.ai_pos, board.player_pos)

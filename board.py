@@ -140,7 +140,9 @@ class Board:
         # Move player or AI 
         if who == MageType.PLAYER:
             old_row, old_col = self.player_pos
-            self.player_mana += self.get_tile(row, col).mana
+            tile = self.get_tile(row, col)
+            self.player_mana += tile.mana
+            tile.mana = 0
             self.player_pos = (row, col)
 
             if self.player_sprite:
@@ -156,7 +158,9 @@ class Board:
 
         elif who == MageType.AI:
             old_row, old_col = self.ai_pos
-            self.ai_mana += self.get_tile(row, col).mana
+            tile = self.get_tile(row, col)
+            self.ai_mana += tile.mana
+            tile.mana = 0
             self.ai_pos = (row, col)
 
             if self.ai_sprite:
@@ -255,6 +259,7 @@ class Board:
             self.ai_sprite.set_state(MageStates.WIN)
             self.player_sprite.set_state(MageStates.DEATH)
             self.ai_mana += reachable_mana
+    
     
                                 
     def create_circular_grid(self, radius: float = None):
