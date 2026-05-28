@@ -1,19 +1,19 @@
 import math
-from enums import MageType, Spell 
 
-class MCTSNode:   
+from enums import MageType, Spell
+
+
+class MCTSNode:
     UCB_C = 1.41  # UCB1 exploration constant (sqrt(2) ~= 1.41)
 
-    def __init__(self, turn: MageType, board, action = None, parent = None):
+    def __init__(self, turn: MageType, action=None, parent=None):
         # Move Position, Spell and Spell Target
-        self.action: tuple[tuple[int, int], Spell, tuple[int, int]]= action
+        self.action: tuple[tuple[int, int], Spell, tuple[int, int]] = action
         self.turn = turn
         self.parent = parent
-        self.board = board
         self.children = []
         self.visits = 0
         self.value = 0.0
-
 
     def next_turn(self):
         return MageType.PLAYER if self.turn == MageType.AI else MageType.AI
@@ -21,7 +21,7 @@ class MCTSNode:
     def generate_actions(self, board):
         actions = []
 
-        if self.next_turn() == MageType.AI:
+        if self.turn == MageType.AI:
             position = board.ai_pos
             current_mana = board.ai_mana
         else:
@@ -38,26 +38,26 @@ class MCTSNode:
             actions.append((move, Spell.FREEZE, None))
 
             for target in targets:
-                if not self.board.get_tile(*target).is_frozen():
+                if not board.get_tile(*target).is_frozen():
                     actions.append((move, Spell.FREEZE, target))
                 if move_mana >= 3:
                     actions.append((move, Spell.BURN, target))
 
-
         return actions
-        
-        
+
     def ucb1(self):
         if self.visits == 0:
-            return float('inf')
+            return float("inf")
 
-        return (self.value / self.visits) + self.UCB_C * math.sqrt(math.log(self.parent.visits) / self.visits)
+        return (self.value / self.visits) + self.UCB_C * math.sqrt(
+            math.log(self.parent.visits) / self.visits
+        )
 
     def best_child(self):
-        return max(self.children, key=lambda child: child.ucb1())
+        if self.turn == MageType.AI:
+            return max(self.children, key=lambda child: child.ucb1())
+        else:
+            return min(self.children, key=lambda child: child.ucb1())
 
     def most_visited(self):
-        return max(self.children, key = lambda child: child.visits)
-            
-
-    
+        return max(self.children, key=lambda child: child.visits)

@@ -129,7 +129,7 @@ class Mage:
                 num_frames=10,
                 target_width=scale,
                 target_height=scale,
-                speed=200,
+                speed=100,
                 crop=crop
             ),
         }
