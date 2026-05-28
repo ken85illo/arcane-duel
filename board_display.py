@@ -14,6 +14,7 @@ class BoardDisplay:
         self._draw_grid()
         self._draw_mages()
         self._draw_fire_anims()
+        self._draw_freeze_anims()
 
     def _draw_grid(self):
         game = self.game
@@ -23,7 +24,7 @@ class BoardDisplay:
             for col in range(GridConfig.GRID_SIZE):
                 tile = game.board.get_tile(row, col)
                 rect = tile_rect(row, col)
-                text = self.game.font_md.render(str(tile.mana), True, (255, 255, 255))
+                text = self.game.font_lg.render(str(tile.mana), True, (37, 76, 39))
 
                 self._draw_platform(row, col)
 
@@ -72,8 +73,18 @@ class BoardDisplay:
                     effect.fill((255, int(80*(1-impact_frame)), 0, alpha))
                     self.game.screen.blit(effect, rect.topleft)    
 
-                
+    def _draw_freeze_anims(self):
+        for anim in self.game.freeze_anims:
+            if anim.frame <= anim.FREEZE_END:
+                freeze_frame = anim.freeze_frame()
+                alpha = int(200 * (1 - freeze_frame))
+                rect = tile_rect(*anim.target_pos)
 
+                if alpha > 0:
+                    effect = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+                    effect.fill((40, 160, int(210*(1-freeze_frame)), alpha))
+                    self.game.screen.blit(effect, rect.topleft)    
+        
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game
@@ -105,11 +116,13 @@ class BoardDisplay:
         x = col * self.TILE_SIZE
         y = row * self.TILE_SIZE
 
-        is_frozen = game.board.get_tile(row, col).is_frozen()
+        tile =game.board.get_tile(row, col)
+        is_frozen = tile.is_frozen()
         is_dark = (row + col) % 2 == 0
+        is_cumulative = tile.is_cumulative
 
         platform = Platform.get_platform(
-            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen
+            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen, is_cumulative=is_cumulative
         )
         game.screen.blit(platform, (x, y))
 

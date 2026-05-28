@@ -2,6 +2,7 @@ import random
 import sys
 import threading
 
+from freeze_anim import FreezeAnim
 from mcts import MCTS
 from enums import Phase, AIState, Winner, Direction
 from board import Board
@@ -52,22 +53,20 @@ class Game:
     def _new_game(self):
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase = Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
+        self.phase = self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
         self.spell_choice = Spell.FREEZE
         self.winner: Winner = None     
-
-        self.log = [] # Combat log entries (max 9 lines)
+        
+        self.log = [{"src": None, "msg": "Welcome to Arcane Duel!"}] # Combat log entries (max 9 lines)
 
         self.board_display = BoardDisplay(self)
         self.panel_display = PanelDisplay(self)
         self.flash_display = FlashDisplay(self) # For displaying temporary messages like "Invalid Move" or "AI is Thinking"
         self.game_over_display = GameOverDisplay(self)
-
-        self.log = ["Welcome to Arcane Duel!"] # Combat log entries (max 9 lines)
 
         self.flash_msg    = "TEST"             # Short message shown in the center of the board
         self.flash_timer  = 0             # How many frames the flash message remains visible
@@ -82,6 +81,7 @@ class Game:
         # Animation lists
         self.move_anims = []
         self.fire_anims = []
+        self.freeze_anims = []
         self.pending_spells = []  # queued spells to apply on animation impact
         self.update_valid_moves()
 
@@ -92,7 +92,7 @@ class Game:
 
     def log_add(self, m):
         self.log.append(m)
-        if len(self.log) > 9:
+        if len(self.log) > 15:
             self.log.pop(0)
 
     # State helpers section
@@ -156,8 +156,11 @@ class Game:
                 self.move_anims.append(MoveAnim(MageType.PLAYER, old_pos, clicked_tile))
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
-                
-                self.log_add(f"Player moves to ({new_row}, {new_col})")
+
+                tile = self.board.get_tile(new_row, new_col)
+                # LOG MESSAGE 
+                self.log_add({"src": MageType.PLAYER, "msg": f"Player moves to ({new_row}, {new_col})"})
+                self.log_add({"src": MageType.PLAYER, "msg": f"Player stepped on +{tile.mana} mana"})
                 
                 self._flash("Player Spell Phase", t=60)
             else:
@@ -211,12 +214,15 @@ class Game:
                     return # DOUBLE CHECK. Can't afford burn, do nothing
                 
                 if self.spell_choice == Spell.BURN:
+                    # LOG MESSAGE
+                    self.log_add({"src": MageType.PLAYER, "msg": f"Player casts BURN on tile ({row}, {col})"})
+
+                    # LOG MESSAGE
+                    if tile.is_frozen():
+                        self.log_add({"src": MageType.PLAYER, "msg": f"Player collected +{tile.mana} mana"})
+
                     # Play caster attack animation immediately and queue burn effect for impact
-                    if self.board.player_sprite:
-                        self.board.player_sprite.set_state(MageStates.ATTACK)
-                        _, old_col  = self.board.player_pos
-                        if old_col != col:
-                            self.board.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT
+                    self._play_mage_attack(col, MageType.PLAYER)
 
                     self.fire_anims.append(
                         FireAnim(clicked_tile, tile.mana, tile.is_frozen())
@@ -228,11 +234,34 @@ class Game:
                         'target': clicked_tile,
                     })
                 else:
+                    # LOG MESSAGE    
+                    self.log_add({"src": MageType.PLAYER, "msg": f"Player casts FREEZE on tile ({row}, {col})"})
+
+                    self._play_mage_attack(col, MageType.PLAYER)
+
+                    self.freeze_anims.append(
+                        FreezeAnim(clicked_tile)
+                    )
                     self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
+
                 self._end_player_turn()
         
         else:
             return # Not player's turn, do nothing
+
+    def _play_mage_attack(self, col, who: MageType):
+        sprite = self.player if who == MageType.PLAYER else self.ai
+        pos = self.board.player_pos if who == MageType.PLAYER else self.board.ai_pos
+
+        if sprite:
+            sprite.set_state(MageStates.ATTACK)
+            _, old_col  = pos
+            if old_col != col:
+                if who == MageType.PLAYER:
+                    self.board.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT
+                else:
+                    self.board.ai_directiion = Direction.LEFT if col < old_col else Direction.RIGHT
+                
 
     def _end_player_turn(self):
         # Check if AI is trapped before next turn starts
@@ -324,6 +353,11 @@ class Game:
             self.ai_delay -= 1
             return
         
+        # If there are active fire animations, wait for them to finish
+        
+        if self.fire_anims:
+            return
+
         if self.ai_stage == AIState.START:
             self.start_ai_calculation()
             return
@@ -342,6 +376,13 @@ class Game:
             self.ai_delay = self.DELAY_MOVE
             self.ai_stage = AIState.CASTING_SPELL
             self.move_anims.append(MoveAnim(MageType.AI, old_pos, move))
+
+            # LOG MESSAGE
+            self.log_add({"src": MageType.AI, "msg": f"AI moves to ({move[0]}, {move[1]})"})
+
+            if target:
+                self.log_add({"src": MageType.AI, "msg": f"AI stepped on +{self.board.get_tile(*target).mana} mana"})
+
             return
 
         if self.ai_stage == AIState.CASTING_SPELL:
@@ -357,21 +398,13 @@ class Game:
             target = target if target in valid_targets else (random.choice(valid_targets) if valid_targets else None)
             print(f"AI Action: Move to {move}, Spell: {spell}, Target: {target}")
 
-
-
             if spell == Spell.BURN and not self.board.can_afford_burn(MageType.AI):
                 spell = Spell.FREEZE # Downgrade to freeze if burn isn't affordable
             
             if target:
                 tile = self.board.get_tile(*target)
                 if spell == Spell.BURN:
-                    # Play AI caster attack animation immediately and queue burn effect
-                    if self.board.ai_sprite:
-                        self.board.ai_sprite.set_state(MageStates.ATTACK)
-                        _, old_col = self.board.ai_pos
-                        if old_col != target[1]:
-                            self.board.ai_direction = Direction.LEFT if target[1] < old_col else Direction.RIGHT
-
+                    self._play_mage_attack(target[1], MageType.AI)
                     self.fire_anims.append(
                         FireAnim(target, tile.mana, tile.is_frozen())
                     )
@@ -383,10 +416,29 @@ class Game:
                     })
 
                 else:
+
+                    self._play_mage_attack(target[1], MageType.AI)
+                    self.freeze_anims.append(
+                        FreezeAnim(target)
+                    )
+
                     self.board.apply_spell(MageType.AI, spell, *target)
+
+
 
             self.ai_delay = self.DELAY_SPELL
             self.ai_stage = AIState.FINISHING_TURN
+            
+            # LOG MESSAGE
+            if spell == Spell.FREEZE:
+                self.log_add({"src": MageType.AI, "msg": f"AI casts FREEZE on tile ({target[0]}, {target[1]})"})
+
+            if spell == Spell.BURN:
+                self.log_add({"src": MageType.AI, "msg": f"AI casts BURN on tile ({target[0]}, {target[1]})"})
+
+            if spell == Spell.BURN and self.board.get_tile(*target).is_frozen():
+                self.log_add({"src": MageType.AI, "msg": f"AI collected +{tile.mana} mana"})
+
             return
         
         if self.ai_stage == AIState.FINISHING_TURN:
@@ -422,6 +474,9 @@ class Game:
 
         for animation in self.fire_anims:
             animation.anim_update()
+
+        for animation in self.freeze_anims:
+            animation.anim_update()
             
         # Apply pending spells when their fire animation reaches impact
         remaining_pending = []
@@ -433,7 +488,7 @@ class Game:
                 if getattr(anim, 'target_pos', None) == target:
                     matching = anim
                     break
-
+            
             if matching and getattr(matching, 'frame', 0) >= FireAnim.IMPACT_END:
                 # apply the spell effect now
                 who = pending['who']
@@ -448,10 +503,11 @@ class Game:
         # Remove completed animations after applying pending spells
         self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
         self.fire_anims = [animation for animation in self.fire_anims if not animation.anim_done()]
+        self.freeze_anims = [animation for animation in self.freeze_anims if not animation.anim_done()]
 
 
     def _is_any_anim_running(self):
-        return (self.move_anims or self.fire_anims)
+        return (self.move_anims or self.fire_anims or self.freeze_anims)
                 
     # ===== Main Game Loop =====
     def run(self):

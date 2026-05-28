@@ -8,16 +8,17 @@ from spritesheet import SpriteSheet
 from ui_util import tile_rect
 
 
+
 class FireAnim:
-    FALL_END     = 54
-    IMPACT_END = 74
-    SCALE = 3
+    FALL_END     = 84
+    IMPACT_END = 120
+    SCALE = 5
     SPRITE_WIDTH = 48 * SCALE
     SPRITE_HEIGHT = 32 * SCALE
 
     def __init__(self, target_pos, tile_mana, was_frozen):
-        self.offset_x = -80
-        self.offset_y = -90
+        self.offset_x = -140
+        self.offset_y = -160
         self.rotation = 235
 
 
@@ -41,7 +42,7 @@ class FireAnim:
         )
 
         # Fire starts far above and to the right of the target
-        self.start_pixel  = (target_rect.centerx + 120, -60)
+        self.start_pixel  = (target_rect.centerx + 280, -60)
     
     def anim_done(self):
         return self.frame >= self.IMPACT_END

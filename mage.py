@@ -111,7 +111,7 @@ class Mage:
                 num_frames=11,
                 target_width=scale,
                 target_height=scale,
-                speed=120,
+                speed=80,
                 crop=crop
             ),
             MageStates.DEATH: Animation(

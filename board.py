@@ -7,7 +7,7 @@ from mage import MageStates
 from bfs_board import breadth_first_search
 
 class Board:
-    CUMULATIVE_TILE_GEN_CHANCE = 25
+    CUMULATIVE_TILE_GEN_CHANCE = 15
 
     def _init_grid(self):
         # Generate the tiles with random mana
@@ -47,14 +47,14 @@ class Board:
         self.ai_pos = (GridConfig.GRID_SIZE - 2, GridConfig.GRID_SIZE // 2)
 
         # Initialize the grid and mage positions
-        self.grid = self._init_grid()
+        self.grid = self.create_circular_grid(4.5) # self._init_grid()
         
         # Randomize cumulative tile positions
         self._assign_random_cumulative_tiles()
         
         # Set both mages a 0 starting mana
-        self.player_mana = 100
-        self.ai_mana = 100
+        self.player_mana = 1
+        self.ai_mana = 1
 
         # Valid mage and spell directions
         self.directions = [
@@ -257,7 +257,29 @@ class Board:
             self.ai_mana += reachable_mana
     
                                 
+    def create_circular_grid(self, radius: float = None):
+        size = GridConfig.GRID_SIZE
+        grid = [[Tile(r, c) for c in range(size)] for r in range(size)]
 
+        # Compute center coordinates and default radius that fits inside the grid
+        center = ( (size - 1) / 2.0, (size - 1) / 2.0 )
+        if radius is None:
+            radius = (size - 1) / 2.0
+
+        radius_sq = radius * radius
+
+        for r in range(size):
+            for c in range(size):
+                dx = c - center[1]
+                dy = r - center[0]
+                if (dx * dx + dy * dy) > radius_sq:
+                    grid[r][c].state = TileState.WALL
+
+        # Ensure starting positions have zero mana like in _init_grid
+        grid[self.player_pos[0]][self.player_pos[1]].mana = 0
+        grid[self.ai_pos[0]][self.ai_pos[1]].mana = 0
+
+        return grid
         
 
 

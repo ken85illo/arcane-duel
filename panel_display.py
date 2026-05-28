@@ -59,12 +59,47 @@ class PanelDisplay:
 
         return y + height + 10
 
+    def _wrap_text(self, text, font, max_width):
+        words = text.split(" ")
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = f"{current_line} {word}".strip() if current_line else word
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                if current_line:
+                    lines.append(current_line)
+                current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        return lines
+
     def _combat_log(self, x, y):
         lh2 = self.game.font_sm.render("COMBAT LOG", True, PanelColors.TEXT_DIM)
         self.game.screen.blit(lh2, (x, y))
+
         y += 18
-        for entry in self.game.log[-7:]:
-            lb = self.game.font_sm.render(entry[:40], True, PanelColors.TEXT)
+        max_log_height = self.game.SCREEN_HEIGHT - 152 - y
+        line_height = 16
+        max_lines = max_log_height // line_height
+        rendered_lines = []
+
+        log_width = self.PANEL_WIDTH - 44
+
+        for entry in self.game.log:
+            text_color = PanelColors.TEXT_DIM
+
+            if entry["src"] == MageType.PLAYER:
+                text_color = PanelColors.PLAYER
+
+            elif entry["src"] == MageType.AI:
+                text_color = PanelColors.AI
+
+            lb = self.game.font_sm.render(entry["msg"][:40], True, text_color)
             self.game.screen.blit(lb, (x, y))
             y += 16
 
