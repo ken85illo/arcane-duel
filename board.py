@@ -1,7 +1,7 @@
 from collections import deque
 import random
 from tile import Tile
-from enums import TileState, Spell, MageType
+from enums import Direction, TileState, Spell, MageType
 from ui_util import GridConfig
 from mage import MageStates
 from bfs_board import breadth_first_search
@@ -38,6 +38,8 @@ class Board:
                     target.mana = random.randint(1, 3)
 
     def __init__(self, player_sprite, ai_sprite):
+
+
         # Place the player on top-middle of the board
         self.player_pos = (1, GridConfig.GRID_SIZE // 2)
 
@@ -65,6 +67,9 @@ class Board:
             (-1, 1), # Upper-Right
             (-1, -1), # Upper-Left
         ]
+
+        self.player_direction = Direction.RIGHT
+        self.ai_direction = Direction.RIGHT
 
         self.player_sprite = player_sprite
         self.ai_sprite = ai_sprite
@@ -132,11 +137,15 @@ class Board:
             old_row, old_col = self.player_pos
             self.player_mana += self.get_tile(row, col).mana
             self.player_pos = (row, col)
+            if old_col != col:
+                self.player_direction  = Direction.LEFT if col < old_col else Direction.RIGHT
 
         elif who == MageType.AI:
             old_row, old_col = self.ai_pos
             self.ai_mana += self.get_tile(row, col).mana
             self.ai_pos = (row, col)
+            if old_col != col:
+                self.ai_direction  = Direction.LEFT if col < old_col else Direction.RIGHT
 
         # Destroy the old tile
         self.get_tile(old_row, old_col).destroy_tile()
@@ -151,8 +160,16 @@ class Board:
         # Play animation for attack
         if who == MageType.PLAYER:
             self.player_sprite.set_state(MageStates.ATTACK)
+            _, old_col  = self.player_pos 
+
+            if old_col != col:
+                self.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT 
         else:
             self.ai_sprite.set_state(MageStates.ATTACK)
+            _, old_col  = self.ai_pos 
+
+            if old_col != col:
+                self.ai_direction = Direction.LEFT if col < old_col else Direction.RIGHT 
 
         if spell == Spell.FREEZE:
             if target.is_frozen():

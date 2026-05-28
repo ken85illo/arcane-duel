@@ -2,7 +2,7 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import MageType, Phase, Spell
+from enums import Direction, MageType, Phase, Spell
 from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
 
 class BoardDisplay:
@@ -41,23 +41,26 @@ class BoardDisplay:
         player_anim = next((anim for anim in game.move_anims if anim.who == MageType.PLAYER), None)
         ai_anim = next((anim for anim in game.move_anims if anim.who == MageType.AI), None)
 
+
         player_row, player_col = game.board.player_pos
         ai_row, ai_col = game.board.ai_pos
 
+        # Play the player animation for movement
         if player_anim:
             new_x, new_y = player_anim.current_pixel()
         else:
             new_x, new_y = player_col * self.TILE_SIZE,player_row * self.TILE_SIZE 
 
-        game.player.draw(new_x,new_y, game.screen)
+        game.player.draw(new_x, new_y, game.board.player_direction == Direction.LEFT, game.screen)
 
 
+        # Play the AI animation for movement
         if ai_anim:
             new_x, new_y = ai_anim.current_pixel()
         else:
             new_x, new_y = ai_col * self.TILE_SIZE,ai_row * self.TILE_SIZE 
 
-        game.ai.draw(new_x, new_y,game.screen)
+        game.ai.draw(new_x, new_y, game.board.ai_direction == Direction.LEFT, game.screen)
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game

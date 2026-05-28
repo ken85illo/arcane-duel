@@ -254,10 +254,13 @@ class Game:
             return
         
         if self.ai_stage == AIState.MOVING:
+            old_pos = self.board.ai_pos
             move, spell, target = self.ai_action
+
             self.board.apply_move(MageType.AI, *move)
             self.ai_delay = self.DELAY_MOVE
             self.ai_stage = AIState.CASTING_SPELL
+            self.move_anims.append(MoveAnim(MageType.AI, old_pos, move))
             return
 
         if self.ai_stage == AIState.CASTING_SPELL:

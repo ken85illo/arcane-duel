@@ -33,5 +33,8 @@ class Winner(Enum):
     AI = auto()
     DRAW = auto()
     
+class Direction(Enum):
+    LEFT = auto()
+    RIGHT = auto()
 
     
