@@ -180,20 +180,6 @@ class Board:
         target = self.get_tile(row, col)
         print(f"{who.name} casts {spell.name} on tile ({row}, {col}) with state {target.state.name} and mana {target.mana}")
 
-        # Play animation for attack
-        if who == MageType.PLAYER:
-            self.player_sprite.set_state(MageStates.ATTACK)
-            _, old_col  = self.player_pos 
-
-            if old_col != col:
-                self.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT 
-        else:
-            self.ai_sprite.set_state(MageStates.ATTACK)
-            _, old_col  = self.ai_pos 
-
-            if old_col != col:
-                self.ai_direction = Direction.LEFT if col < old_col else Direction.RIGHT 
-
         if spell == Spell.FREEZE:
             if target.is_frozen():
                 return

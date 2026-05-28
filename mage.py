@@ -111,7 +111,7 @@ class Mage:
                 num_frames=11,
                 target_width=scale,
                 target_height=scale,
-                speed=80,
+                speed=120,
                 crop=crop
             ),
             MageStates.DEATH: Animation(
@@ -151,7 +151,7 @@ class Mage:
         if self.state != MageStates.DEATH and active_anim.current_frame < prev_frame:
             self.set_state(MageStates.IDLE)
         
-        if self.state  == MageStates.DEATH and active_anim.current_frame < prev_frame:
+        if self.state == MageStates.DEATH and active_anim.current_frame < prev_frame:
             active_anim.current_frame = prev_frame
         
     

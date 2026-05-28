@@ -122,7 +122,7 @@ class MCTS:
 
         if target is not None and target not in valid_targets:
             if valid_targets:
-                target = random.choice(valid_targets),
+                target = random.choice(valid_targets)
             else:
                 target = None
 

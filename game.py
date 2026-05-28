@@ -3,12 +3,12 @@ import sys
 import threading
 
 from mcts import MCTS
-from enums import Phase, AIState, Winner
+from enums import Phase, AIState, Winner, Direction
 from board import Board
 from board_display import BoardDisplay, tile_rect
 from flash_display import FlashDisplay
 from game_over_display import GameOverDisplay
-from mage import Mage
+from mage import Mage, MageStates
 from board import Board
 from enums import MageType, Spell, Winner
 
@@ -59,13 +59,15 @@ class Game:
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
         self.spell_choice = Spell.FREEZE
         self.winner: Winner = None     
-        # == To Be Added
-        # self.log = [] # Combat log entries (max 9 lines)
+
+        self.log = [] # Combat log entries (max 9 lines)
 
         self.board_display = BoardDisplay(self)
         self.panel_display = PanelDisplay(self)
         self.flash_display = FlashDisplay(self) # For displaying temporary messages like "Invalid Move" or "AI is Thinking"
         self.game_over_display = GameOverDisplay(self)
+
+        self.log = ["Welcome to Arcane Duel!"] # Combat log entries (max 9 lines)
 
         self.flash_msg    = "TEST"             # Short message shown in the center of the board
         self.flash_timer  = 0             # How many frames the flash message remains visible
@@ -80,12 +82,18 @@ class Game:
         # Animation lists
         self.move_anims = []
         self.fire_anims = []
+        self.pending_spells = []  # queued spells to apply on animation impact
         self.update_valid_moves()
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
 
         return Phase.PLAYER_MOVE if r <= 50 else Phase.AI_MOVE
+
+    def log_add(self, m):
+        self.log.append(m)
+        if len(self.log) > 9:
+            self.log.pop(0)
 
     # State helpers section
 
@@ -149,6 +157,8 @@ class Game:
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
                 
+                self.log_add(f"Player moves to ({new_row}, {new_col})")
+                
                 self._flash("Player Spell Phase", t=60)
             else:
                 self._flash("Invalid Move", t=60)
@@ -201,11 +211,24 @@ class Game:
                     return # DOUBLE CHECK. Can't afford burn, do nothing
                 
                 if self.spell_choice == Spell.BURN:
+                    # Play caster attack animation immediately and queue burn effect for impact
+                    if self.board.player_sprite:
+                        self.board.player_sprite.set_state(MageStates.ATTACK)
+                        _, old_col  = self.board.player_pos
+                        if old_col != col:
+                            self.board.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT
+
                     self.fire_anims.append(
                         FireAnim(clicked_tile, tile.mana, tile.is_frozen())
                     )
 
-                self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
+                    self.pending_spells.append({
+                        'who': MageType.PLAYER,
+                        'spell': self.spell_choice,
+                        'target': clicked_tile,
+                    })
+                else:
+                    self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
                 self._end_player_turn()
         
         else:
@@ -341,12 +364,26 @@ class Game:
             
             if target:
                 tile = self.board.get_tile(*target)
-                self.board.apply_spell(MageType.AI, spell, *target)
-
                 if spell == Spell.BURN:
+                    # Play AI caster attack animation immediately and queue burn effect
+                    if self.board.ai_sprite:
+                        self.board.ai_sprite.set_state(MageStates.ATTACK)
+                        _, old_col = self.board.ai_pos
+                        if old_col != target[1]:
+                            self.board.ai_direction = Direction.LEFT if target[1] < old_col else Direction.RIGHT
+
                     self.fire_anims.append(
                         FireAnim(target, tile.mana, tile.is_frozen())
                     )
+
+                    self.pending_spells.append({
+                        'who': MageType.AI,
+                        'spell': spell,
+                        'target': target,
+                    })
+
+                else:
+                    self.board.apply_spell(MageType.AI, spell, *target)
 
             self.ai_delay = self.DELAY_SPELL
             self.ai_stage = AIState.FINISHING_TURN
@@ -386,6 +423,29 @@ class Game:
         for animation in self.fire_anims:
             animation.anim_update()
             
+        # Apply pending spells when their fire animation reaches impact
+        remaining_pending = []
+        for pending in self.pending_spells:
+            target = pending['target']
+            # find a matching fire anim
+            matching = None
+            for anim in self.fire_anims:
+                if getattr(anim, 'target_pos', None) == target:
+                    matching = anim
+                    break
+
+            if matching and getattr(matching, 'frame', 0) >= FireAnim.IMPACT_END:
+                # apply the spell effect now
+                who = pending['who']
+                spell = pending['spell']
+                row, col = target
+                self.board.apply_spell(who, spell, row, col)
+            else:
+                remaining_pending.append(pending)
+
+        self.pending_spells = remaining_pending
+
+        # Remove completed animations after applying pending spells
         self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
         self.fire_anims = [animation for animation in self.fire_anims if not animation.anim_done()]
 

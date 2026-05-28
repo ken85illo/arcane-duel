@@ -10,8 +10,7 @@ from ui_util import tile_rect
 
 class FireAnim:
     FALL_END     = 54
-    IMPACT_END   = 74
-    SMOULDER_END = 94
+    IMPACT_END = 74
     SCALE = 3
     SPRITE_WIDTH = 48 * SCALE
     SPRITE_HEIGHT = 32 * SCALE
@@ -45,10 +44,10 @@ class FireAnim:
         self.start_pixel  = (target_rect.centerx + 120, -60)
     
     def anim_done(self):
-        return self.frame >= self.SMOULDER_END
+        return self.frame >= self.IMPACT_END
     
     def anim_update(self):
-        self.frame = min(self.frame + 1, self.SMOULDER_END)
+        self.frame = min(self.frame + 1, self.IMPACT_END)
 
     def fire_pixel(self):
         # Position of the fire sprite
@@ -64,12 +63,6 @@ class FireAnim:
         if self.frame <= self.FALL_END:
             return 0.0
         return min((self.frame - self.FALL_END) / (self.IMPACT_END - self.FALL_END), 1.0)
-    
-    def smoulder_frame(self):
-        # Progress of smoulder from 0-1
-        if self.frame <= self.IMPACT_END:
-            return 0.0
-        return min((self.frame - self.IMPACT_END) / (self.SMOULDER_END - self.IMPACT_END), 1.0)
 
         
     def draw(self, surface):

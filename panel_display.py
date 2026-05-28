@@ -25,7 +25,11 @@ class PanelDisplay:
         # Divider
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (x_pos, y_pos), (x_pos + self.PANEL_WIDTH - 28, y_pos))
         y_pos += 10
-        
+
+        # Combat Log
+        self._combat_log(x_pos, y_pos)
+
+        # Spells 
         frozen, burn = self._btn_rects()
 
         can_afford_burn = self.game.board.can_afford_burn(MageType.PLAYER)
@@ -54,6 +58,15 @@ class PanelDisplay:
         self.game.screen.blit(mana_caption_text, (x + 10 + mana_score_text.get_width() + 5, y + 44))
 
         return y + height + 10
+
+    def _combat_log(self, x, y):
+        lh2 = self.game.font_sm.render("COMBAT LOG", True, PanelColors.TEXT_DIM)
+        self.game.screen.blit(lh2, (x, y))
+        y += 18
+        for entry in self.game.log[-7:]:
+            lb = self.game.font_sm.render(entry[:40], True, PanelColors.TEXT)
+            self.game.screen.blit(lb, (x, y))
+            y += 16
 
     def _btn_rects(self):
         board_width = GridConfig.TILE_SIZE * GridConfig.GRID_SIZE 

@@ -10,7 +10,6 @@ class BoardDisplay:
         self.game = game
         self.TILE_SIZE = GridConfig.TILE_SIZE
 
-        
     def draw(self):
         self._draw_grid()
         self._draw_mages()
@@ -31,9 +30,6 @@ class BoardDisplay:
                 if tile.is_active() or tile.is_frozen():
                     self.game.screen.blit(text, rect)
                     self._draw_active_tile_overlay(row, col, rect, overlay)
-
-
-
 
     def _draw_mages(self):
         game = self.game
@@ -64,10 +60,20 @@ class BoardDisplay:
     
     def _draw_fire_anims(self):
         for anim in self.game.fire_anims:
-            target_pos_x, target_pos_y = anim.target_pixel
-
             if anim.frame <= anim.FALL_END:
                 anim.draw(self.game.screen)
+            elif anim.frame <= anim.IMPACT_END:
+                impact_frame = anim.impact_frame()
+                alpha = int(200 * (1 - impact_frame))
+                rect = tile_rect(*anim.target_pos)
+
+                if alpha > 0:
+                    effect = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+                    effect.fill((255, int(80*(1-impact_frame)), 0, alpha))
+                    self.game.screen.blit(effect, rect.topleft)    
+
+                
+
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game
