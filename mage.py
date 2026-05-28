@@ -11,6 +11,7 @@ class MageStates(Enum):
     BACK_WALK = auto()
     ATTACK = auto()
     DEATH = auto()
+    WIN = auto()
 
 
 class Mage:
@@ -60,6 +61,12 @@ class Mage:
             Mage.FRAME_HEIGHT,
         )
 
+        win_sheet = SpriteSheet(
+            f"assets/{color}_wizard_win.png",
+            Mage.FRAME_WIDTH,
+            Mage.FRAME_HEIGHT,
+        )
+
         # Map animations to states
         self.animations = {
             MageStates.IDLE: Animation(
@@ -77,7 +84,7 @@ class Mage:
                 num_frames=8,
                 target_width=scale,
                 target_height=scale,
-                speed=120,
+                speed=60,
                 crop=crop
             ),
             MageStates.SIDE_WALK: Animation(
@@ -86,7 +93,7 @@ class Mage:
                 num_frames=8,
                 target_width=scale,
                 target_height=scale,
-                speed=120,
+                speed=60,
                 crop=crop
             ),
             MageStates.BACK_WALK: Animation(
@@ -95,7 +102,7 @@ class Mage:
                 num_frames=8,
                 target_width=scale,
                 target_height=scale,
-                speed=120,
+                speed=60,
                 crop=crop
             ),
             MageStates.ATTACK: Animation(
@@ -111,6 +118,15 @@ class Mage:
                 death_sheet,
                 row=0,
                 num_frames=11,
+                target_width=scale,
+                target_height=scale,
+                speed=100,
+                crop=crop
+            ),
+            MageStates.WIN: Animation(
+                win_sheet,
+                row=0,
+                num_frames=10,
                 target_width=scale,
                 target_height=scale,
                 speed=200,
@@ -129,9 +145,16 @@ class Mage:
 
         active_anim.update()
 
-        if (self.state == MageStates.ATTACK and active_anim.current_frame < prev_frame):
-            self.set_state(MageStates.IDLE)
+        if self.state == MageStates.WIN:
+            return
 
+        if self.state != MageStates.DEATH and active_anim.current_frame < prev_frame:
+            self.set_state(MageStates.IDLE)
+        
+        if self.state  == MageStates.DEATH and active_anim.current_frame < prev_frame:
+            active_anim.current_frame = prev_frame
+        
+    
 
     def draw(self, x, y, flip, surface: pygame.Surface):
         raw_image = self.animations[self.state].get_current_frame()

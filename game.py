@@ -6,6 +6,8 @@ from mcts import MCTS
 from enums import Phase, TileState, AIState, Winner
 from board import Board
 from board_display import BoardDisplay, tile_rect
+from flash_display import FlashDisplay
+from game_over_display import GameOverDisplay
 from mage import Mage, MageStates
 from board import Board
 from enums import MageType, Spell
@@ -49,10 +51,8 @@ class Game:
     def _new_game(self):
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase =  Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
+        self.phase = self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
-        self.board_display = BoardDisplay(self)
-        self.panel_display = PanelDisplay(self)
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
@@ -60,9 +60,15 @@ class Game:
         self.winner = None     
         # == To Be Added
         # self.log = [] # Combat log entries (max 9 lines)
-        # self.flash_msg    = ""             # Short message shown in the center of the board
-        # self.flash_timer  = 0             # How many frames the flash message remains visible
-        
+
+        self.board_display = BoardDisplay(self)
+        self.panel_display = PanelDisplay(self)
+        self.flash_display = FlashDisplay(self) # For displaying temporary messages like "Invalid Move" or "AI is Thinking"
+        self.game_over_display = GameOverDisplay(self)
+
+        self.flash_msg    = "TEST"             # Short message shown in the center of the board
+        self.flash_timer  = 0             # How many frames the flash message remains visible
+
         self.ai_busy = False
         self.ai_delay = 0
         self.ai_calculating = False
@@ -72,14 +78,13 @@ class Game:
 
         # Animation lists
         self.move_anims = []
+        self.meteor_anims = []
         self.update_valid_moves()
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
 
         return Phase.PLAYER_MOVE if r <= 50 else Phase.AI_MOVE
-
-
 
     # State helpers section
 
@@ -129,6 +134,9 @@ class Game:
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
 
+        if self.phase == Phase.GAME_OVER:
+            return
+
         if self.phase == Phase.PLAYER_MOVE:
             if clicked_tile and clicked_tile in self.valid_player_move_set:
                 old_pos = self.board.player_pos
@@ -139,44 +147,57 @@ class Game:
                 self.move_anims.append(MoveAnim(MageType.PLAYER, old_pos, clicked_tile))
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
+                
+                self._flash("Player Spell Phase", t=60)
             else:
+                self._flash("Invalid Move", t=60)
                 return # Invalid move, do nothing
         
         elif self.phase == Phase.PLAYER_SPELL:
+            # Check if Player is trapped before spell phase
+            if self.check_game_over(MageType.PLAYER, Phase.PLAYER_SPELL): 
+                return
+            
             freeze_btn, burn_btn = self.panel_display._btn_rects()
 
             # Clicked the FREEZE button
             if freeze_btn.collidepoint(mx, my):
                 self.spell_choice = Spell.FREEZE
+                self._flash("Freeze Spell Selected", t=60)
                 return
 
             # Clicked the BURN button
             if burn_btn.collidepoint(mx, my):
                 if not self.board.can_afford_burn(MageType.PLAYER):
+                    self._flash("Need 3 Mana for Burn Spell", t=60)
                     return
                 
                 self.spell_choice = Spell.BURN
+                self._flash("Burn Spell Selected", t=60)
                 return
 
             # Click a tile after selecting a spell
             if clicked_tile:
 
                 if not self.spell_choice:
+                    self._flash("Please Pick a Spell", t=60)
                     return # No spell selected, do nothing
 
                 if clicked_tile not in self.valid_player_spell_set:
+                    self._flash("Invalid Spell Target", t=60)
                     return # Invalid spell target, do nothing
                     
                 row, col = clicked_tile
 
                 if self.board.get_tile(row, col).is_frozen() and self.spell_choice == Spell.FREEZE:
+                    self._flash("Tile is Already Frozen", t=60)
                     return # Can't freeze a tile that's already frozen, do nothing
 
                 if self.spell_choice == Spell.BURN and not self.board.can_afford_burn(MageType.PLAYER):
                     self.spell_choice = None # Reset spell choice since burn can't be cast
+                    self._flash("Need 3 Mana for Burn Spell", t=60)
                     return # DOUBLE CHECK. Can't afford burn, do nothing
 
-                
                 self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
                 self._end_player_turn()
         
@@ -184,14 +205,14 @@ class Game:
             return # Not player's turn, do nothing
 
     def _end_player_turn(self):
+        # Check if AI is trapped before next turn starts
+        if self.check_game_over(MageType.AI, Phase.AI_MOVE):
+            return
+        
+        self._flash("AI's TURN ", t=60)
+
         self.board.turn_increase_cumulative_mana()
         self.board.turn_decrement_freeze_timer()
-
-        # Check if AI is trapped
-        if not self.board.valid_mage_moves(*self.board.ai_pos):
-            self.board.victory_lap(MageType.PLAYER)
-            self._finish()
-            return
 
         # Start the AI's turn
         self.phase = Phase.AI_MOVE
@@ -200,6 +221,33 @@ class Game:
         self.ai_delay  = 0
         self.ai_action = None
     
+    def check_game_over(self, turn: MageType, phase: Phase):
+        # Checks if Player still has moveable spots after AI Turn
+        if turn == MageType.PLAYER and not self.board.valid_mage_moves(*self.board.player_pos):
+            self.board.victory_lap(MageType.AI) # AI Wins
+            self._finish()
+            return True
+        
+        # Checks if Player still has valid spell targets during spell phase
+        if turn == MageType.PLAYER and phase == Phase.PLAYER_SPELL and not self.board.valid_spell_targets(*self.board.player_pos):
+            self.board.victory_lap(MageType.AI) # AI Wins
+            self._finish()
+            return True
+        
+        # Checks if AI still has moveable spots after Player Turn
+        if turn == MageType.AI and not self.board.valid_mage_moves(*self.board.ai_pos):
+            self.board.victory_lap(MageType.PLAYER) # Player Wins
+            self._finish()
+            return True
+
+        # Checks if AI still has valid spell targets during spell phase
+        if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
+            self.board.victory_lap(MageType.PLAYER) # Player Wins
+            self._finish()
+            return True
+        
+        return False
+
     def _finish(self):
         player_mana, ai_mana = self.board.player_mana, self.board.ai_mana
         self.winner = Winner.PLAYER if player_mana > ai_mana else (Winner.AI if ai_mana > player_mana else Winner.DRAW)
@@ -208,15 +256,13 @@ class Game:
     # ===== AI Logic =====
 
     DELAY_THINK  = 45
-    DELAY_MOVE   = 40
-    DELAY_SPELL  = 50
+    DELAY_MOVE   = 100
+    DELAY_SPELL  = 100
     DELAY_FINISH = 10
 
 
     def start_ai_calculation(self):
         self.ai_stage = AIState.THINKING
-        print("AI is thinking...")
-
 
         def ai_calculation(board, mcts):
             best_action = mcts.mcts_best_action(board)
@@ -238,6 +284,9 @@ class Game:
 
 
     def _update(self):
+        if self.flash_timer > 0 :
+            self.flash_timer -= 1
+
         if self.phase != Phase.AI_MOVE:
             return
 
@@ -246,14 +295,16 @@ class Game:
             return
         
         if self.ai_stage == AIState.START:
-            print("test")
             self.start_ai_calculation()
             return
 
         if self.ai_stage == AIState.THINKING:
+            self._flash("AI is thinking ", t=10)
             return
         
         if self.ai_stage == AIState.MOVING:
+            self._flash("AI Movement Phase ", t=60)
+
             old_pos = self.board.ai_pos
             move, spell, target = self.ai_action
 
@@ -264,6 +315,12 @@ class Game:
             return
 
         if self.ai_stage == AIState.CASTING_SPELL:
+            # Check if AI is trapped before spell phase
+            if self.check_game_over(MageType.AI, Phase.AI_SPELL): 
+                return 
+            
+            self._flash("AI Spell Phase", t=60)
+
             move, spell, target = self.ai_action
             valid_targets = self.board.valid_spell_targets(*self.board.ai_pos)
 
@@ -282,6 +339,12 @@ class Game:
             return
         
         if self.ai_stage == AIState.FINISHING_TURN:
+            # Check if Player is trapped before next turn starts
+            if self.check_game_over(MageType.PLAYER, Phase.PLAYER_MOVE):
+                return
+            
+            self._flash("PLAYER's TURN ", t=100)
+
             self.board.turn_increase_cumulative_mana()
             self.board.turn_decrement_freeze_timer()
             self.ai_delay = self.DELAY_FINISH
@@ -289,16 +352,12 @@ class Game:
             self.ai_busy = False
             self.ai_stage = AIState.THINKING
             self.update_valid_moves()
-
-            # Check if player is trapped
-            if not self.board.valid_mage_moves(*self.board.player_pos):
-                self.board.victory_lap(MageType.AI)
-                self._finish()
-                return
             
             self.phase = Phase.PLAYER_MOVE
 
-        
+    def _flash(self, msg, t=100):
+        self.flash_msg = msg
+        self.flash_timer = t    
 
     def _update_animations(self):
         self.player.update()
@@ -309,12 +368,9 @@ class Game:
         self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
 
 
-
     def _is_any_anim_running(self):
-        return (self.move_anims)
+        return (self.move_anims or self.meteor_anims)
                 
-
-
     # ===== Main Game Loop =====
     def run(self):
         while True:
@@ -323,6 +379,12 @@ class Game:
             self._update_animations()
             self.board_display.draw()
             self.panel_display.draw()
+
+            if self.phase == Phase.GAME_OVER:
+                self.game_over_display.draw()
+
+            if self.flash_timer > 0:
+                self.flash_display.draw()
             
             pygame.display.flip()
             self.clock.tick(60)

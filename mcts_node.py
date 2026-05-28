@@ -41,6 +41,7 @@ class MCTSNode:
                 if move_mana >= 3:
                     actions.append((move, Spell.BURN, target))
 
+
         return actions
         
         

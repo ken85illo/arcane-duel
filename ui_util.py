@@ -2,7 +2,7 @@ import pygame
 
 class GridConfig:
     TILE_SIZE = 80
-    GRID_SIZE = 11
+    GRID_SIZE = 6
 
 # ===== PANEL COLORS ====
 class PanelColors:

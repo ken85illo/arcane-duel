@@ -111,13 +111,18 @@ class Board:
             while self.is_in_bounds(new_row, new_col):
                 target = self.get_tile(new_row, new_col)
 
-                # Break the target line if its obstructed by player or AI 
+                # # Break the target line if its obstructed by player or AI 
                 if (new_row, new_col) == self.player_pos or (new_row, new_col) == self.ai_pos:
                     break
 
-                # Break the target line at empty tile
-                if target.state == TileState.EMPTY or target.state == TileState.WALL:
+                if target.state == TileState.WALL:
                     break
+
+                # Break the target line at empty tile
+                if target.state == TileState.EMPTY:
+                    new_row += direction_row
+                    new_col += direction_col
+                    continue
                 
                 # Break the target line at frozen tile but make it targetable (can be burned)
                 if target.state == TileState.FROZEN:
@@ -137,6 +142,15 @@ class Board:
             old_row, old_col = self.player_pos
             self.player_mana += self.get_tile(row, col).mana
             self.player_pos = (row, col)
+
+            if self.player_sprite:
+                if row < old_row and col == old_col:
+                    self.player_sprite.set_state(MageStates.BACK_WALK)
+                elif row > old_row and col == old_col:
+                    self.player_sprite.set_state(MageStates.FRONT_WALK)
+                else:
+                    self.player_sprite.set_state(MageStates.SIDE_WALK)
+
             if old_col != col:
                 self.player_direction  = Direction.LEFT if col < old_col else Direction.RIGHT
 
@@ -144,6 +158,15 @@ class Board:
             old_row, old_col = self.ai_pos
             self.ai_mana += self.get_tile(row, col).mana
             self.ai_pos = (row, col)
+
+            if self.ai_sprite:
+                if row < old_row and col == old_col:
+                    self.ai_sprite.set_state(MageStates.BACK_WALK)
+                elif row > old_row and col == old_col:
+                    self.ai_sprite.set_state(MageStates.FRONT_WALK)
+                else:
+                    self.ai_sprite.set_state(MageStates.SIDE_WALK)
+
             if old_col != col:
                 self.ai_direction  = Direction.LEFT if col < old_col else Direction.RIGHT
 
@@ -239,8 +262,12 @@ class Board:
         reachable_mana = breadth_first_search(self, pos, enemy_pos)
         
         if who == MageType.PLAYER:
+            self.player_sprite.set_state(MageStates.WIN)
+            self.ai_sprite.set_state(MageStates.DEATH)
             self.player_mana += reachable_mana
         else:
+            self.ai_sprite.set_state(MageStates.WIN)
+            self.player_sprite.set_state(MageStates.DEATH)
             self.ai_mana += reachable_mana
     
                                 

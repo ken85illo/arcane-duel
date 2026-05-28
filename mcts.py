@@ -96,7 +96,6 @@ class MCTS:
             
         ai_reachable_mana,  player_reachable_mana = self._bfs_both(board)
         mana_score = (board.ai_mana + ai_reachable_mana) - (board.player_mana + player_reachable_mana)
-
         return mana_score 
     
     # 4. Backpropagation: update all ancestors
@@ -138,8 +137,6 @@ class MCTS:
             elif spell == Spell.BURN:
                 tile.destroy_tile()
 
-
-    
     def _bfs_both(self, board): 
         ai_reachable_mana = breadth_first_search(board, board.ai_pos, board.player_pos)
         player_reachable_mana = breadth_first_search(board, board.player_pos, board.ai_pos)
