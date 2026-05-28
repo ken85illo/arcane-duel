@@ -3,15 +3,16 @@ import sys
 import threading
 
 from mcts import MCTS
-from enums import Phase, TileState, AIState, Winner
+from enums import Phase, AIState, Winner
 from board import Board
 from board_display import BoardDisplay, tile_rect
 from flash_display import FlashDisplay
 from game_over_display import GameOverDisplay
-from mage import Mage, MageStates
+from mage import Mage
 from board import Board
-from enums import MageType, Spell
+from enums import MageType, Spell, Winner
 
+from fire_anim import FireAnim
 from move_anim import MoveAnim
 from ui_util import GridConfig
 from panel_display import PanelDisplay
@@ -51,13 +52,13 @@ class Game:
     def _new_game(self):
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase = self._randomize_starting_turn() # Starting turn
+        self.phase = Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
         self.valid_player_spell_set = set() # Valid spell targets for the player this turn
         self.spell_choice = Spell.FREEZE
-        self.winner = None     
+        self.winner: Winner = None     
         # == To Be Added
         # self.log = [] # Combat log entries (max 9 lines)
 
@@ -78,7 +79,7 @@ class Game:
 
         # Animation lists
         self.move_anims = []
-        self.meteor_anims = []
+        self.fire_anims = []
         self.update_valid_moves()
 
     def _randomize_starting_turn(self) -> Phase:
@@ -188,8 +189,9 @@ class Game:
                     return # Invalid spell target, do nothing
                     
                 row, col = clicked_tile
+                tile = self.board.get_tile(row, col)
 
-                if self.board.get_tile(row, col).is_frozen() and self.spell_choice == Spell.FREEZE:
+                if tile.is_frozen() and self.spell_choice == Spell.FREEZE:
                     self._flash("Tile is Already Frozen", t=60)
                     return # Can't freeze a tile that's already frozen, do nothing
 
@@ -197,6 +199,11 @@ class Game:
                     self.spell_choice = None # Reset spell choice since burn can't be cast
                     self._flash("Need 3 Mana for Burn Spell", t=60)
                     return # DOUBLE CHECK. Can't afford burn, do nothing
+                
+                if self.spell_choice == Spell.BURN:
+                    self.fire_anims.append(
+                        FireAnim(clicked_tile, tile.mana, tile.is_frozen())
+                    )
 
                 self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
                 self._end_player_turn()
@@ -327,6 +334,8 @@ class Game:
             target = target if target in valid_targets else (random.choice(valid_targets) if valid_targets else None)
             print(f"AI Action: Move to {move}, Spell: {spell}, Target: {target}")
 
+
+
             if spell == Spell.BURN and not self.board.can_afford_burn(MageType.AI):
                 spell = Spell.FREEZE # Downgrade to freeze if burn isn't affordable
             
@@ -334,12 +343,20 @@ class Game:
                 tile = self.board.get_tile(*target)
                 self.board.apply_spell(MageType.AI, spell, *target)
 
+                if spell == Spell.BURN:
+                    self.fire_anims.append(
+                        FireAnim(target, tile.mana, tile.is_frozen())
+                    )
+
             self.ai_delay = self.DELAY_SPELL
             self.ai_stage = AIState.FINISHING_TURN
             return
         
         if self.ai_stage == AIState.FINISHING_TURN:
             # Check if Player is trapped before next turn starts
+            if self.fire_anims: # Wait for fire anim to stop
+                return
+
             if self.check_game_over(MageType.PLAYER, Phase.PLAYER_MOVE):
                 return
             
@@ -365,11 +382,16 @@ class Game:
 
         for animation in self.move_anims:     
             animation.anim_update()
+
+        for animation in self.fire_anims:
+            animation.anim_update()
+            
         self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
+        self.fire_anims = [animation for animation in self.fire_anims if not animation.anim_done()]
 
 
     def _is_any_anim_running(self):
-        return (self.move_anims or self.meteor_anims)
+        return (self.move_anims or self.fire_anims)
                 
     # ===== Main Game Loop =====
     def run(self):

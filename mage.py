@@ -156,7 +156,7 @@ class Mage:
         
     
 
-    def draw(self, x, y, flip, surface: pygame.Surface):
+    def draw(self, x, y, flip, surface):
         raw_image = self.animations[self.state].get_current_frame()
 
         offset_x= self.flip_offset_x  if flip else self.offset_x

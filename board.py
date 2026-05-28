@@ -53,8 +53,8 @@ class Board:
         self._assign_random_cumulative_tiles()
         
         # Set both mages a 0 starting mana
-        self.player_mana = 0
-        self.ai_mana = 0
+        self.player_mana = 100
+        self.ai_mana = 100
 
         # Valid mage and spell directions
         self.directions = [

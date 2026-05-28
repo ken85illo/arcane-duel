@@ -1,5 +1,6 @@
 import pygame
 from ui_util import PanelColors
+from enums import MageType, Winner
 
 class GameOverDisplay:
     def __init__(self, game):
@@ -11,33 +12,32 @@ class GameOverDisplay:
         ov.fill((0, 0, 0, 185))
         self.game.screen.blit(ov, (0, 0))
 
-        col = (
-            PanelColors.PLAYER
-            if self.game.winner == "Blue Mage"
-            else (PanelColors.AI if self.game.winner == "Red Mage" else PanelColors.GOLD)
-        )
-        txt = (
-            f"{self.game.winner} Wins!" if self.game.winner != "Draw" else "It's a Draw!"
-        )
+        color = None
+        text = ""
 
-        t = self.game.font_xl.render(txt, True, col)
-        self.game.screen.blit(
-            t, (SCREEN_W // 2 - t.get_width() // 2, SCREEN_H // 2 - 80)
-        )
+        # Setting Text Color based on Winner
+        if self.game.winner == MageType.PLAYER:
+            color = PanelColors.PLAYER
+        
+        elif self.game.winner == MageType.AI:
+            color = PanelColors.AI
 
-        sc = self.game.font_md.render(
-            f"Blue: {self.game.board.player_mana} mana   |   Red: {self.game.board.ai_mana} mana",
-            True,
-            PanelColors.TEXT,
-        )
-        self.game.screen.blit(
-            sc, (SCREEN_W // 2 - sc.get_width() // 2, SCREEN_H // 2 - 4)
-        )
+        else:
+            color = PanelColors.GOLD
 
-        rr_lbl = self.game.font_sm.render(
-            "Press  R  to play again", True, PanelColors.TEXT_DIM
-        )
-        self.game.screen.blit(
-            rr_lbl,
-            (SCREEN_W // 2 - rr_lbl.get_width() // 2, SCREEN_H // 2 + 40),
-        )
+        # Setting Text based on Winner
+        if self.game.winner != Winner.DRAW:
+            winner = "Player" if self.game.winner == Winner.PLAYER else "AI"
+            text = f"{winner} Wins!"
+
+        else:
+            text = "It's a Draw!"
+
+        winner_text = self.game.font_xl.render(text, True, color)
+        scores = f"Player: {self.game.board.player_mana} mana   |   AI: {self.game.board.ai_mana} mana"
+        mana_scores_text = self.game.font_md.render(scores, True, PanelColors.TEXT)
+        play_again_text = self.game.font_sm.render("Press  R  to play again", True, PanelColors.TEXT_DIM)
+        
+        self.game.screen.blit(winner_text, (SCREEN_W // 2 - winner_text.get_width() // 2, SCREEN_H // 2 - 80))
+        self.game.screen.blit(mana_scores_text, (SCREEN_W // 2 - mana_scores_text.get_width() // 2, SCREEN_H // 2 - 4))
+        self.game.screen.blit(play_again_text, (SCREEN_W // 2 - play_again_text.get_width() // 2, SCREEN_H // 2 + 40))

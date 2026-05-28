@@ -4,11 +4,12 @@ from enums import MageType, Spell
 class MCTSNode:   
     UCB_C = 1.41  # UCB1 exploration constant (sqrt(2) ~= 1.41)
 
-    def __init__(self, turn: MageType,  action = None, parent = None):
+    def __init__(self, turn: MageType, board, action = None, parent = None):
         # Move Position, Spell and Spell Target
         self.action: tuple[tuple[int, int], Spell, tuple[int, int]]= action
         self.turn = turn
         self.parent = parent
+        self.board = board
         self.children = []
         self.visits = 0
         self.value = 0.0
@@ -37,7 +38,8 @@ class MCTSNode:
             actions.append((move, Spell.FREEZE, None))
 
             for target in targets:
-                actions.append((move, Spell.FREEZE, target))
+                if not self.board.get_tile(*target).is_frozen():
+                    actions.append((move, Spell.FREEZE, target))
                 if move_mana >= 3:
                     actions.append((move, Spell.BURN, target))
 

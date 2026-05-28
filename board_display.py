@@ -13,6 +13,8 @@ class BoardDisplay:
         
     def draw(self):
         self._draw_grid()
+        self._draw_mages()
+        self._draw_fire_anims()
 
     def _draw_grid(self):
         game = self.game
@@ -31,7 +33,6 @@ class BoardDisplay:
                     self._draw_active_tile_overlay(row, col, rect, overlay)
 
 
-        self._draw_mages()
 
 
     def _draw_mages(self):
@@ -40,7 +41,6 @@ class BoardDisplay:
         # Find active animations
         player_anim = next((anim for anim in game.move_anims if anim.who == MageType.PLAYER), None)
         ai_anim = next((anim for anim in game.move_anims if anim.who == MageType.AI), None)
-
 
         player_row, player_col = game.board.player_pos
         ai_row, ai_col = game.board.ai_pos
@@ -61,6 +61,13 @@ class BoardDisplay:
             new_x, new_y = ai_col * self.TILE_SIZE,ai_row * self.TILE_SIZE 
 
         game.ai.draw(new_x, new_y, game.board.ai_direction == Direction.LEFT, game.screen)
+    
+    def _draw_fire_anims(self):
+        for anim in self.game.fire_anims:
+            target_pos_x, target_pos_y = anim.target_pixel
+
+            if anim.frame <= anim.FALL_END:
+                anim.draw(self.game.screen)
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game

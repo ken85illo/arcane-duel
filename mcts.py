@@ -11,7 +11,7 @@ class MCTS:
         self.simulation_depth = simulation_depth
 
     def mcts_best_action(self, board):
-        root = MCTSNode(turn=MageType.PLAYER)
+        root = MCTSNode(turn=MageType.PLAYER, board=board)
         
         for i in range(self.max_iterations):
             node = root
@@ -67,7 +67,7 @@ class MCTS:
 
             self._apply_move(board, next_turn, action)
 
-            child = MCTSNode(next_turn, action=action, parent=node)
+            child = MCTSNode(next_turn, board=board, action=action, parent=node)
             node.children.append(child)
             node = child
 
@@ -76,7 +76,7 @@ class MCTS:
     # Rollout plays random moves which will be used for simulation
     def _rollout(self, current_turn, board):
         for _ in range(self.simulation_depth):  
-            temp_node = MCTSNode(turn=current_turn)
+            temp_node = MCTSNode(turn=current_turn, board=board)
             actions = temp_node.generate_actions(board)
 
             if not actions:
