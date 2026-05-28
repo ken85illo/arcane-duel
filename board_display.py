@@ -2,26 +2,14 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import Phase, Spell
-from ui_util import GridConfig, HighlightColors, draw_border, lerp
+from enums import MageType, Phase, Spell
+from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
 
-
-# ===== HELPER FUNCTIONS ======
-def tile_rect(row, col):
-    # Get the rect from the tile
-    return pygame.Rect(
-        col * GridConfig.TILE_SIZE,
-        row * GridConfig.TILE_SIZE,
-        GridConfig.TILE_SIZE,
-        GridConfig.TILE_SIZE,
-    )
-
-
-# ===== Helper functions =====
 class BoardDisplay:
     def __init__(self, game):
         self.game = game
         self.TILE_SIZE = GridConfig.TILE_SIZE
+
         
     def draw(self):
         self._draw_grid()
@@ -43,12 +31,33 @@ class BoardDisplay:
                     self._draw_active_tile_overlay(row, col, rect, overlay)
 
 
-        # Draw player and AI once using correct coordinate mapping (col -> x, row -> y)
-        player_row, player_col = game.board.player_pos
-        game.player.draw(player_col * self.TILE_SIZE,player_row * self.TILE_SIZE, game.screen)
+        self._draw_mages()
 
+
+    def _draw_mages(self):
+        game = self.game
+
+        # Find active animations
+        player_anim = next((anim for anim in game.move_anims if anim.who == MageType.PLAYER), None)
+        ai_anim = next((anim for anim in game.move_anims if anim.who == MageType.AI), None)
+
+        player_row, player_col = game.board.player_pos
         ai_row, ai_col = game.board.ai_pos
-        game.ai.draw(ai_col * self.TILE_SIZE, ai_row * self.TILE_SIZE,game.screen)
+
+        if player_anim:
+            new_x, new_y = player_anim.current_pixel()
+        else:
+            new_x, new_y = player_col * self.TILE_SIZE,player_row * self.TILE_SIZE 
+
+        game.player.draw(new_x,new_y, game.screen)
+
+
+        if ai_anim:
+            new_x, new_y = ai_anim.current_pixel()
+        else:
+            new_x, new_y = ai_col * self.TILE_SIZE,ai_row * self.TILE_SIZE 
+
+        game.ai.draw(new_x, new_y,game.screen)
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game

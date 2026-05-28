@@ -1,31 +1,37 @@
 import math
-from enums import Spell 
+from enums import MageType, Spell 
 
 class MCTSNode:   
-    UCB_C = math.sqrt(2)  # UCB1 exploration constant (sqrt(2) ~= 1.41)
+    UCB_C = 1.41  # UCB1 exploration constant (sqrt(2) ~= 1.41)
 
-    def __init__(self, action = None, parent = None):
+    def __init__(self, turn: MageType,  action = None, parent = None):
         # Move Position, Spell and Spell Target
         self.action: tuple[tuple[int, int], Spell, tuple[int, int]]= action
+        self.turn = turn
         self.parent = parent
         self.children = []
         self.visits = 0
         self.value = 0.0
-        self._untried = None
 
-    def untried_actions(self, board):
-        if self._untried is None:
-            self._untried = self._generate_actions(board)
-    
-        return self._untried
 
-    def _generate_actions(self, board):
+    def next_turn(self):
+        return MageType.PLAYER if self.turn == MageType.AI else MageType.AI
+
+    def generate_actions(self, board):
         actions = []
-        moves = board.valid_mage_moves(*board.ai_pos)
+
+        if self.next_turn() == MageType.AI:
+            position = board.ai_pos
+            current_mana = board.ai_mana
+        else:
+            position = board.player_pos
+            current_mana = board.player_mana
+
+        moves = board.valid_mage_moves(*position)
 
         for move in moves:
             targets = board.valid_spell_targets(*move)
-            move_mana = board.ai_mana + board.get_tile(*move).mana
+            move_mana = current_mana + board.get_tile(*move).mana
 
             # Add a move-only action even if there are no valid spell targets.
             actions.append((move, Spell.FREEZE, None))

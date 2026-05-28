@@ -217,7 +217,9 @@ class Board:
     
     def victory_lap(self, who: MageType):
         pos = self.player_pos if who == MageType.PLAYER else self.ai_pos
-        _, reachable_mana = breadth_first_search(self, pos)
+        enemy_pos = self.ai_pos if who == MageType.PLAYER else self.player_pos
+
+        reachable_mana = breadth_first_search(self, pos, enemy_pos)
         
         if who == MageType.PLAYER:
             self.player_mana += reachable_mana

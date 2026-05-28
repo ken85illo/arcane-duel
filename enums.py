@@ -22,6 +22,7 @@ class TileState(Enum):
     WALL = auto()
 
 class AIState(Enum):
+    START = auto()
     THINKING = auto()
     MOVING = auto()
     CASTING_SPELL = auto()

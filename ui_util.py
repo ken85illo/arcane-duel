@@ -41,7 +41,7 @@ def draw_border(screen, color, rect, radius=10, width=2):
     pygame.draw.rect(screen, color, rect, width, border_radius=radius)
 
 
-def _make_font(self, size, bold=False):
+def _make_font(size, bold=False):
     for name in ("dejavusans", "liberationsans", "freesans", "droidsans"):
         try:
             f = pygame.font.SysFont(name, size, bold=bold)
@@ -52,6 +52,17 @@ def _make_font(self, size, bold=False):
     return pygame.font.Font(None, size + 6)  # Fall back to pygame's built-in bitmap font
 
 
-def lerp(first_color, second_color, factor):
+def lerp(first, second, factor):
     # Linearly interpolate between two colors by factor
-    return tuple(int(first_color[i] + (second_color[i] - first_color[i]) * factor) for i in range(3))
+    return tuple(int(first[i] + (second[i] - first[i]) * factor) for i in range(3))
+
+
+def tile_rect(row, col):
+    # Get the rect from the tile
+    return pygame.Rect(
+        col * GridConfig.TILE_SIZE,
+        row * GridConfig.TILE_SIZE,
+        GridConfig.TILE_SIZE,
+        GridConfig.TILE_SIZE,
+    )
+

@@ -1,5 +1,6 @@
 import random
 import sys
+import threading
 
 from mcts import MCTS
 from enums import Phase, TileState, AIState, Winner
@@ -9,6 +10,7 @@ from mage import Mage, MageStates
 from board import Board
 from enums import MageType, Spell
 
+from move_anim import MoveAnim
 from ui_util import GridConfig
 from panel_display import PanelDisplay
 import pygame
@@ -63,16 +65,21 @@ class Game:
         
         self.ai_busy = False
         self.ai_delay = 0
-        self.ai_stage = AIState.THINKING
+        self.ai_calculating = False
+        self.ai_stage = AIState.START
         self.ai_action  = None
         self.mcts = MCTS()
 
+        # Animation lists
+        self.move_anims = []
         self.update_valid_moves()
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
 
         return Phase.PLAYER_MOVE if r <= 50 else Phase.AI_MOVE
+
+
 
     # State helpers section
 
@@ -110,6 +117,9 @@ class Game:
             
             # Handles left mouse clicks
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self._is_any_anim_running():
+                    return # Wait for the animation
+
                 if self.phase == Phase.PLAYER_MOVE:  
                     self._handle_player_click(mx, my)
 
@@ -121,9 +131,12 @@ class Game:
 
         if self.phase == Phase.PLAYER_MOVE:
             if clicked_tile and clicked_tile in self.valid_player_move_set:
-                row, col = clicked_tile
-                self.board.apply_move(MageType.PLAYER, row, col)
+                old_pos = self.board.player_pos
+                new_row, new_col = clicked_tile
+
+                self.board.apply_move(MageType.PLAYER, new_row, new_col)
                 self.update_valid_spells()
+                self.move_anims.append(MoveAnim(MageType.PLAYER, old_pos, clicked_tile))
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
             else:
@@ -176,14 +189,14 @@ class Game:
 
         # Check if AI is trapped
         if not self.board.valid_mage_moves(*self.board.ai_pos):
-            self.board.victory_lap()
+            self.board.victory_lap(MageType.PLAYER)
             self._finish()
             return
 
         # Start the AI's turn
         self.phase = Phase.AI_MOVE
         self.ai_busy   = True
-        self.ai_stage  = AIState.THINKING
+        self.ai_stage  = AIState.START
         self.ai_delay  = 0
         self.ai_action = None
     
@@ -199,6 +212,31 @@ class Game:
     DELAY_SPELL  = 50
     DELAY_FINISH = 10
 
+
+    def start_ai_calculation(self):
+        self.ai_stage = AIState.THINKING
+        print("AI is thinking...")
+
+
+        def ai_calculation(board, mcts):
+            best_action = mcts.mcts_best_action(board)
+            self.ai_action = best_action
+
+            if not best_action:
+                # if AI is stuck player wins via Victory Lap
+                self.board.victory_lap(MageType.PLAYER)
+                self._finish()
+                return
+            
+            self.ai_delay = self.DELAY_THINK
+            self.ai_action = best_action
+            self.ai_stage = AIState.MOVING
+
+        # Run mcts in the background
+        worker = threading.Thread(target=ai_calculation, args=(self.board, self.mcts), daemon=True)
+        worker.start()
+
+
     def _update(self):
         if self.phase != Phase.AI_MOVE:
             return
@@ -207,18 +245,12 @@ class Game:
             self.ai_delay -= 1
             return
         
+        if self.ai_stage == AIState.START:
+            print("test")
+            self.start_ai_calculation()
+            return
+
         if self.ai_stage == AIState.THINKING:
-            best_action = self.mcts.mcts_best_action(self.board)
-
-            if not best_action:
-                # if AI is stuck player wins via Victory Lap
-                self.board.victory_lap()
-
-                return
-            
-            self.ai_delay = self.DELAY_THINK
-            self.ai_action = best_action
-            self.ai_stage = AIState.MOVING
             return
         
         if self.ai_stage == AIState.MOVING:
@@ -230,7 +262,9 @@ class Game:
 
         if self.ai_stage == AIState.CASTING_SPELL:
             move, spell, target = self.ai_action
+            valid_targets = self.board.valid_spell_targets(*self.board.ai_pos)
 
+            target = target if target in valid_targets else (random.choice(valid_targets) if valid_targets else None)
             print(f"AI Action: Move to {move}, Spell: {spell}, Target: {target}")
 
             if spell == Spell.BURN and not self.board.can_afford_burn(MageType.AI):
@@ -260,12 +294,22 @@ class Game:
                 return
             
             self.phase = Phase.PLAYER_MOVE
-        
 
+        
 
     def _update_animations(self):
         self.player.update()
         self.ai.update()
+
+        for animation in self.move_anims:     
+            animation.anim_update()
+        self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
+
+
+
+    def _is_any_anim_running(self):
+        return (self.move_anims)
+                
 
 
     # ===== Main Game Loop =====
@@ -273,12 +317,12 @@ class Game:
         while True:
             self._events()
             self._update()
+            self._update_animations()
             self.board_display.draw()
             self.panel_display.draw()
             
             pygame.display.flip()
             self.clock.tick(60)
-            self._update_animations()
 
 if __name__ == "__main__":
     Game().run()
