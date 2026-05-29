@@ -8,17 +8,18 @@ from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
 class BoardDisplay:
     def __init__(self, game):
         self.game = game
-        self.TILE_SIZE = GridConfig.TILE_SIZE
+        self.victory_lap_tiles = []
 
     def draw(self):
         self._draw_grid()
+        self._draw_victory_lap()
         self._draw_mages()
         self._draw_fire_anims()
         self._draw_freeze_anims()
 
     def _draw_grid(self):
         game = self.game
-        overlay = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+        overlay = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
 
         for row in range(GridConfig.GRID_SIZE):
             for col in range(GridConfig.GRID_SIZE):
@@ -47,7 +48,7 @@ class BoardDisplay:
         if player_anim:
             new_x, new_y = player_anim.current_pixel()
         else:
-            new_x, new_y = player_col * self.TILE_SIZE,player_row * self.TILE_SIZE 
+            new_x, new_y = player_col * GridConfig.TILE_SIZE, player_row * GridConfig.TILE_SIZE
 
         game.player.draw(new_x, new_y, game.board.player_direction == Direction.LEFT, game.screen)
 
@@ -56,9 +57,28 @@ class BoardDisplay:
         if ai_anim:
             new_x, new_y = ai_anim.current_pixel()
         else:
-            new_x, new_y = ai_col * self.TILE_SIZE,ai_row * self.TILE_SIZE 
+            new_x, new_y = ai_col * GridConfig.TILE_SIZE, ai_row * GridConfig.TILE_SIZE
 
         game.ai.draw(new_x, new_y, game.board.ai_direction == Direction.LEFT, game.screen)
+    
+    
+    def _draw_victory_lap(self):
+        color = (255, 80, 0, 50)
+        if self.game.winner == MageType.PLAYER:
+            color = (0, 0, 255, 100)
+        else:
+            color = (255, 0, 0, 100)
+
+        if self.game.victory_lap_pending and self.game.victory_lap_pending[2]:
+            self.victory_lap_tiles.append(self.game.victory_lap_pending[2].pop())
+
+        for tile in self.victory_lap_tiles:
+            rect = tile_rect(*tile)
+            effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
+            effect.fill(color)
+            self.game.screen.blit(effect, rect.topleft)    
+        
+            
     
     def _draw_fire_anims(self):
         for anim in self.game.fire_anims:
@@ -70,7 +90,7 @@ class BoardDisplay:
                 rect = tile_rect(*anim.target_pos)
 
                 if alpha > 0:
-                    effect = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
                     effect.fill((255, int(80*(1-impact_frame)), 0, alpha))
                     self.game.screen.blit(effect, rect.topleft)    
 
@@ -82,7 +102,7 @@ class BoardDisplay:
                 rect = tile_rect(*anim.target_pos)
 
                 if alpha > 0:
-                    effect = pygame.Surface((self.TILE_SIZE, self.TILE_SIZE), pygame.SRCALPHA)
+                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
                     effect.fill((40, 160, int(210*(1-freeze_frame)), alpha))
                     self.game.screen.blit(effect, rect.topleft)    
         
@@ -114,8 +134,8 @@ class BoardDisplay:
         platform_index = self._get_platform_index(row, col)
 
         # Map grid coordinates to screen coordinates: column -> x, row -> y
-        x = col * self.TILE_SIZE
-        y = row * self.TILE_SIZE
+        x = col * GridConfig.TILE_SIZE
+        y = row * GridConfig.TILE_SIZE
 
         tile =game.board.get_tile(row, col)
         is_frozen = tile.is_frozen()
@@ -123,7 +143,7 @@ class BoardDisplay:
         is_cumulative = tile.is_cumulative
 
         platform = Platform.get_platform(
-            platform_index, self.TILE_SIZE, self.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen, is_cumulative=is_cumulative
+            platform_index, GridConfig.TILE_SIZE, GridConfig.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen, is_cumulative=is_cumulative
         )
         game.screen.blit(platform, (x, y))
 

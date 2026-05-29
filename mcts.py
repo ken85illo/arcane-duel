@@ -11,7 +11,7 @@ class MCTS:
         self.simulation_depth = simulation_depth
 
     def mcts_best_action(self, board):
-        root = MCTSNode(turn=MageType.AI)
+        root = MCTSNode(turn=MageType.PLAYER)
         
         for i in range(self.max_iterations):
             node = root
@@ -52,7 +52,7 @@ class MCTS:
     def _selection(self, node, board):
         while node.children and not self._untried_actions(node, board):
             node = node.best_child()
-            self._apply_move(board, node.parent.turn, node.action)
+            self._apply_move(board, node.turn, node.action)
 
         return node, board
     
@@ -63,12 +63,12 @@ class MCTS:
         
         if untried:
             action = random.choice(untried)
-            next_turn = node.next_turn()
-
-            self._apply_move(board, node.turn, action)
+            next_turn = node.next_turn() 
 
             child = MCTSNode(next_turn, action=action, parent=node)
             node.children.append(child)
+
+            self._apply_move(board, next_turn, action)
             node = child
 
         return node, board
@@ -82,19 +82,20 @@ class MCTS:
             if not actions:
                 break
 
+            next_turn = temp_node.next_turn()
             action = random.choice(actions)
-            self._apply_move(board, current_turn, action)
-            current_turn =  temp_node.next_turn()
+            self._apply_move(board, next_turn, action)
+            current_turn = next_turn
         
         return board
-
         
     # 3. Simulation: score the simulated board
     def _simulation(self, starting_turn, board):
         board = self._rollout(starting_turn, board)
-            
-        ai_reachable_mana,  player_reachable_mana = self._bfs_both(board)
+
+        ai_reachable_mana, player_reachable_mana = self._bfs_both(board)
         mana_score = (board.ai_mana + ai_reachable_mana) - (board.player_mana + player_reachable_mana)
+
         return mana_score 
     
     # 4. Backpropagation: update all ancestors
@@ -140,8 +141,8 @@ class MCTS:
         board.turn_increase_cumulative_mana()
 
     def _bfs_both(self, board): 
-        ai_reachable_mana = breadth_first_search(board, board.ai_pos, board.player_pos)
-        player_reachable_mana = breadth_first_search(board, board.player_pos, board.ai_pos)
+        _, ai_reachable_mana, _ = breadth_first_search(board, board.ai_pos, board.player_pos)
+        _, player_reachable_mana, _ = breadth_first_search(board, board.player_pos, board.ai_pos)
         
         return ai_reachable_mana, player_reachable_mana
 
