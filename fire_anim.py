@@ -1,26 +1,17 @@
-import math
-import random
-
 import pygame
 
 from animation import Animation
 from spritesheet import SpriteSheet
-from ui_util import tile_rect
-
-
+from ui_util import GridConfig, tile_rect
 
 class FireAnim:
-    FALL_END     = 84
+    FALL_END = 84
     IMPACT_END = 120
-    SCALE = 5
-    SPRITE_WIDTH = 48 * SCALE
-    SPRITE_HEIGHT = 32 * SCALE
+    BASE_SPRITE_WIDTH = 48
+    BASE_SPRITE_HEIGHT = 32
 
     def __init__(self, target_pos, tile_mana, was_frozen):
-        self.offset_x = -140
-        self.offset_y = -160
         self.rotation = 235
-
 
         self.target_pos = target_pos
         self.tile_mana = tile_mana
@@ -29,20 +20,27 @@ class FireAnim:
         target_rect = tile_rect(*target_pos)
         self.target_pixel = (target_rect.centerx, target_rect.centery)
 
+        # Scale the meteor relative to tile size.
+        self.target_width = max(32, int(GridConfig.TILE_SIZE * 2.0))
+        self.target_height = max(24, int(self.target_width * self.BASE_SPRITE_HEIGHT / self.BASE_SPRITE_WIDTH))
+
+        self.offset_x = -int(self.target_width * 0.58)
+        self.offset_y = -self.target_height
+
         fire_sprite = SpriteSheet(
-            "assets/fire.png", 48, 32
+            "assets/fire.png", self.BASE_SPRITE_WIDTH, self.BASE_SPRITE_HEIGHT
         )
         self.fire_anim = Animation(
             fire_sprite,
             row = 0,
             num_frames=5,
             speed=100,
-            target_width=self.SPRITE_WIDTH,
-            target_height=self.SPRITE_HEIGHT
+            target_width=self.target_width,
+            target_height=self.target_height
         )
 
-        # Fire starts far above and to the right of the target
-        self.start_pixel  = (target_rect.centerx + 280, -60)
+        # Fire starts far above and to the right of the target.
+        self.start_pixel  = (target_rect.centerx + int(self.target_width * 1.2), -int(self.target_height * 0.75))
     
     def anim_done(self):
         return self.frame >= self.IMPACT_END

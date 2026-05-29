@@ -14,6 +14,7 @@ class Phase(Enum):
     AI_MOVE = auto()
     AI_SPELL = auto()
     GAME_OVER = auto()
+    MAIN_MENU = auto()
 
 class TileState(Enum):
     ACTIVE = auto()

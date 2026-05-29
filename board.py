@@ -1,4 +1,3 @@
-from collections import deque
 import random
 from tile import Tile
 from enums import Direction, TileState, Spell, MageType
@@ -47,7 +46,7 @@ class Board:
         self.ai_pos = (GridConfig.GRID_SIZE - 2, GridConfig.GRID_SIZE // 2)
 
         # Initialize the grid and mage positions
-        self.grid = self.create_circular_grid(4.5) # self._init_grid()
+        self.grid = self._init_grid()
         
         # Randomize cumulative tile positions
         self._assign_random_cumulative_tiles()
@@ -249,16 +248,18 @@ class Board:
         pos = self.player_pos if who == MageType.PLAYER else self.ai_pos
         enemy_pos = self.ai_pos if who == MageType.PLAYER else self.player_pos
 
-        reachable_mana = breadth_first_search(self, pos, enemy_pos)
+        _, reachable_mana, visited = breadth_first_search(self, pos, enemy_pos)
         
         if who == MageType.PLAYER:
             self.player_sprite.set_state(MageStates.WIN)
             self.ai_sprite.set_state(MageStates.DEATH)
-            self.player_mana += reachable_mana
+            final_mana = self.player_mana + reachable_mana
         else:
             self.ai_sprite.set_state(MageStates.WIN)
             self.player_sprite.set_state(MageStates.DEATH)
-            self.ai_mana += reachable_mana
+            final_mana = self.ai_mana + reachable_mana
+
+        return who, final_mana, visited
     
     
                                 

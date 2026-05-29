@@ -6,9 +6,6 @@ from freeze_anim import FreezeAnim
 from mcts import MCTS
 from enums import Phase, AIState, Winner, Direction
 from board import Board
-from board_display import BoardDisplay, tile_rect
-from flash_display import FlashDisplay
-from game_over_display import GameOverDisplay
 from mage import Mage, MageStates
 from board import Board
 from enums import MageType, Spell, Winner
@@ -16,13 +13,19 @@ from enums import MageType, Spell, Winner
 from fire_anim import FireAnim
 from move_anim import MoveAnim
 from ui_util import GridConfig
+
+from board_display import BoardDisplay, tile_rect
+from flash_display import FlashDisplay
+from game_over_display import GameOverDisplay
 from panel_display import PanelDisplay
+from main_menu_display import MainMenuDisplay
+
 import pygame
 
 class Game:
     PANEL_WIDTH = 400
-    SCREEN_WIDTH = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE + PANEL_WIDTH
-    SCREEN_HEIGHT = GridConfig.GRID_SIZE * GridConfig.TILE_SIZE
+    SCREEN_WIDTH = 1060    # GridConfig.GRID_SIZE * GridConfig.TILE_SIZE + PANEL_WIDTH
+    SCREEN_HEIGHT = 660                 # GridConfig.GRID_SIZE * GridConfig.TILE_SIZE
     
     def _make_font(self, size, bold=False):
         for name in ("dejavusans", "liberationsans", "freesans", "droidsans"):
@@ -37,8 +40,13 @@ class Game:
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("Arcane Duel")
-        self.screen = pygame.display.set_mode (
-            (self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
+
+        self.screen = pygame.display.set_mode(
+            (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+        )
+
+        # Compute tile size to fit the fixed window, keeping the grid square
+        self._update_tile_size()
 
         # Font sizes for different UI elements
         self.font_xl = self._make_font(38, True)  # Scores, game-over text
@@ -47,13 +55,16 @@ class Game:
         self.font_sm = self._make_font(13)             # Legend, combat log, labels
 
         self.clock = pygame.time.Clock()
-        self._new_game()
+        
+        self.phase = Phase.MAIN_MENU
+        self.main_menu_display = MainMenuDisplay(self)
     
     # ===== Game Setup =====
     def _new_game(self):
+        self._update_tile_size()
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase = self._randomize_starting_turn() # Starting turn
+        self.phase = Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
@@ -84,6 +95,18 @@ class Game:
         self.freeze_anims = []
         self.pending_spells = []  # queued spells to apply on animation impact
         self.update_valid_moves()
+
+        self.victory_lap_pending = None
+        self.victory_lap_delay = 5
+        self.victory_lap_timer = self.victory_lap_delay
+
+
+
+    def _update_tile_size(self):
+        GridConfig.TILE_SIZE = min(
+            (self.SCREEN_WIDTH - self.PANEL_WIDTH) // GridConfig.GRID_SIZE,
+            self.SCREEN_HEIGHT // GridConfig.GRID_SIZE,
+        )
 
     def _randomize_starting_turn(self) -> Phase:
         r = random.randint(1, 100)
@@ -131,6 +154,10 @@ class Game:
             
             # Handles left mouse clicks
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if self.phase == Phase.MAIN_MENU:
+                    self.main_menu_display.handle_click(mx, my)
+                    return
+                
                 if self._is_any_anim_running():
                     return # Wait for the animation
 
@@ -281,36 +308,69 @@ class Game:
         self.ai_action = None
     
     def check_game_over(self, turn: MageType, phase: Phase):
-        # Checks if Player still has moveable spots after AI Turn
-        if turn == MageType.PLAYER and not self.board.valid_mage_moves(*self.board.player_pos):
-            self.board.victory_lap(MageType.AI) # AI Wins
-            self._finish()
-            return True
-        
+        def _finish_game(victory_lap_pending):
+            who, final_mana, _ = victory_lap_pending
+            self._finish(who, final_mana)
+
         # Checks if Player still has valid spell targets during spell phase
         if turn == MageType.PLAYER and phase == Phase.PLAYER_SPELL and not self.board.valid_spell_targets(*self.board.player_pos):
-            self.board.victory_lap(MageType.AI) # AI Wins
-            self._finish()
+            self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
+            _finish_game(self.victory_lap_pending)
+            return True
+
+        # Checks if Player still has moveable spots after AI Turn
+        if turn == MageType.PLAYER and not self.board.valid_mage_moves(*self.board.player_pos):
+            self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
+            _finish_game(self.victory_lap_pending)
+            return True
+        
+        # Checks if AI still has valid spell targets during spell phase
+        if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
+            self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
+            _finish_game(self.victory_lap_pending)
             return True
         
         # Checks if AI still has moveable spots after Player Turn
         if turn == MageType.AI and not self.board.valid_mage_moves(*self.board.ai_pos):
-            self.board.victory_lap(MageType.PLAYER) # Player Wins
-            self._finish()
+            self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
+            _finish_game(self.victory_lap_pending)
             return True
 
-        # Checks if AI still has valid spell targets during spell phase
-        if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
-            self.board.victory_lap(MageType.PLAYER) # Player Wins
-            self._finish()
-            return True
         
         return False
 
-    def _finish(self):
+    def _finish(self, who, final_mana):
         player_mana, ai_mana = self.board.player_mana, self.board.ai_mana
+        
+        if who == MageType.PLAYER:
+            player_mana = final_mana
+        else:
+            ai_mana = final_mana
+
         self.winner = Winner.PLAYER if player_mana > ai_mana else (Winner.AI if ai_mana > player_mana else Winner.DRAW)
         self.phase = Phase.GAME_OVER
+
+    def _trigger_victory_lap(self):
+        if self.victory_lap_pending:
+            if self.victory_lap_timer > 0:
+                self.victory_lap_timer -= 1
+                return True
+
+            if self.victory_lap_pending[0] == MageType.PLAYER:
+                self.board.player_mana += 1
+                new_mana = self.board.player_mana
+            elif self.victory_lap_pending[0] == MageType.AI:
+                self.board.ai_mana += 1
+                new_mana = self.board.ai_mana
+            
+            if self.victory_lap_pending[1] <= new_mana:
+                self.victory_lap_pending = None
+            
+            self.victory_lap_timer = self.victory_lap_delay
+            
+            return True
+        
+        return False
     
     # ===== AI Logic =====
 
@@ -341,8 +401,13 @@ class Game:
         worker = threading.Thread(target=ai_calculation, args=(self.board, self.mcts), daemon=True)
         worker.start()
 
+        
 
     def _update(self):
+
+        if self._trigger_victory_lap():
+            return
+
         if self.flash_timer > 0 :
             self.flash_timer -= 1
 
@@ -513,12 +578,21 @@ class Game:
     def run(self):
         while True:
             self._events()
+
+            # Main menu loop
+            if self.phase == Phase.MAIN_MENU:
+                self.main_menu_display.draw()
+                pygame.display.flip()
+                self.clock.tick(60)
+                
+                continue
+
             self._update()
             self._update_animations()
             self.board_display.draw()
             self.panel_display.draw()
 
-            if self.phase == Phase.GAME_OVER:
+            if self.phase == Phase.GAME_OVER and not self.victory_lap_pending:
                 self.game_over_display.draw()
 
             if self.flash_timer > 0:

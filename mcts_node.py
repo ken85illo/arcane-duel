@@ -21,7 +21,7 @@ class MCTSNode:
     def generate_actions(self, board):
         actions = []
 
-        if self.turn == MageType.AI:
+        if self.next_turn() == MageType.AI:
             position = board.ai_pos
             current_mana = board.ai_mana
         else:
@@ -54,10 +54,7 @@ class MCTSNode:
         )
 
     def best_child(self):
-        if self.turn == MageType.AI:
-            return max(self.children, key=lambda child: child.ucb1())
-        else:
-            return min(self.children, key=lambda child: child.ucb1())
+        return max(self.children, key=lambda child: child.ucb1())
 
     def most_visited(self):
         return max(self.children, key=lambda child: child.visits)

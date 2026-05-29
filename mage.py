@@ -20,8 +20,18 @@ class Mage:
 
     def __init__(self, is_red=False):
         # Animation speed and scale
-        self.offset_x, self.offset_y = -25, -60
-        self.flip_offset_x, self.flip_offset_y = -55, -60
+
+        self.offset = {
+            7: {'x': -25, 'y': -60},
+            9: {'x': -20, 'y': -55},
+            11: {'x': -15, 'y': -45}
+        }
+
+        self.flip_offset = {
+            7: {'x': -55, 'y': -60},
+            9: {'x': -50, 'y': -55},
+            11: {'x': -40, 'y': -45},
+        }
 
         crop=(18, 20, 50, 50)
         scale = GridConfig.TILE_SIZE * 2
@@ -159,8 +169,8 @@ class Mage:
     def draw(self, x, y, flip, surface):
         raw_image = self.animations[self.state].get_current_frame()
 
-        offset_x= self.flip_offset_x  if flip else self.offset_x
-        offset_y= self.flip_offset_y if flip else self.offset_y
+        offset_x= self.flip_offset[GridConfig.GRID_SIZE]['x']  if flip else self.offset[GridConfig.GRID_SIZE]['x']
+        offset_y= self.flip_offset[GridConfig.GRID_SIZE]['y'] if flip else self.offset[GridConfig.GRID_SIZE]['y']
 
         image = pygame.transform.flip(raw_image, flip, False)
         surface.blit(image, (x + offset_x, y + offset_y))
