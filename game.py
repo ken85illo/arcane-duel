@@ -161,8 +161,6 @@ class Game:
                     self.main_menu_display.handle_click(mx, my)
                     return
                 
-                if self._is_any_anim_running():
-                    return # Wait for the animation
 
                 if self.phase == Phase.PLAYER_MOVE:  
                     self._handle_player_click(mx, my)
@@ -426,7 +424,7 @@ class Game:
 
     def _update(self):
 
-        if self._trigger_victory_lap():
+        if self._trigger_victory_lap() or self._is_any_anim_running():
             return
 
         if self.flash_timer > 0 :
@@ -574,11 +572,11 @@ class Game:
             # find a matching fire anim
             matching = None
             for anim in self.fire_anims:
-                if getattr(anim, 'target_pos', None) == target:
+                if anim.target_pos == target:
                     matching = anim
                     break
             
-            if matching and getattr(matching, 'frame', 0) >= FireAnim.IMPACT_END:
+            if matching and matching.frame >= FireAnim.IMPACT_END:
                 # apply the spell effect now
                 who = pending['who']
                 spell = pending['spell']
