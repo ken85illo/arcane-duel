@@ -10,6 +10,18 @@ class MCTS:
         self.max_iterations = max_iterations
         self.simulation_depth = simulation_depth
 
+    def _format_node(self, node, depth=0):
+        indent = "   " * depth
+        avg = (node.value / node.visits) if node.visits else 0.0
+        action_str = repr(node.action)
+        line = f"{indent} action={action_str} visits={node.visits} value={node.value:.2f} avg={avg:.2f}\n"
+        # Sort children by visits descending so the most relevant appear first
+        children = sorted(node.children, key=lambda c: c.visits, reverse=True)
+        for child in children:
+            line += self._format_node(child, depth + 1)
+
+        return line
+        
     def mcts_best_action(self, board):
         root = MCTSNode(turn=MageType.PLAYER)
         
@@ -30,6 +42,13 @@ class MCTS:
             self._backpropagation(node, score)
 
             time.sleep(0.001)
+
+        # After running all iterations, print a formatted view of the root subtree
+        try:
+            print("\nMCTS root tree (action, visits, value, avg):")
+            print(self._format_node(root))
+        except Exception as e:
+            print("Error printing MCTS tree:", e)
 
         if not root.children:
             print("testingggg.......")
@@ -106,6 +125,7 @@ class MCTS:
             node.value += score
             node = node.parent
 
+    
     def _untried_actions(self, node, board):
         all_actions = node.generate_actions(board)
         tried_actions = {child.action for child in node.children}
