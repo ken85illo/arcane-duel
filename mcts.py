@@ -2,11 +2,11 @@ import random
 import time
 from bfs_board import breadth_first_search
 from mcts_node import MCTSNode
-from enums import Spell, MageType, Spell
+from enums import Spell, MageType
 from collections import deque
 
 class MCTS:
-    def __init__(self, simulation_depth = 30, max_iterations=3000):
+    def __init__(self, simulation_depth = 15, max_iterations=10000):
         self.max_iterations = max_iterations
         self.simulation_depth = simulation_depth
 
@@ -35,7 +35,6 @@ class MCTS:
             moves = board.valid_mage_moves(*board.ai_pos)
             if not moves:
                 return None
-
             move = random.choice(moves)
             targets = board.valid_spell_targets(*move)
             target = random.choice(targets) if targets else None
