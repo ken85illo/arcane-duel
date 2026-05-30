@@ -51,7 +51,7 @@ class MCTS:
 
     # 1. Selection: descend to a node with unexplored actions
     def _selection(self, node, board):
-        while node.children and not self._untried_actions(node, board):
+        while node.children and not node.untried_actions(board):
             node = node.best_child()
             self._apply_move(board, node.turn, node.action)
 
@@ -60,7 +60,7 @@ class MCTS:
 
     # 2. Expansion: try one new action
     def _expansion(self, node, board):
-        untried =  self._untried_actions(node, board)
+        untried =  node.untried_actions(board)
         
         if untried:
             action = random.choice(untried)
@@ -106,12 +106,6 @@ class MCTS:
             node.value += score
             node = node.parent
 
-    def _untried_actions(self, node, board):
-        all_actions = node.generate_actions(board)
-        tried_actions = {child.action for child in node.children}
-        untried = [actions for actions in all_actions if actions not in tried_actions]
-
-        return untried
 
     def _apply_move(self, board, turn:MageType, action: tuple[tuple[int, int], Spell, tuple[int, int]]):
         move, spell, target = action

@@ -18,6 +18,13 @@ class MCTSNode:
     def next_turn(self):
         return MageType.PLAYER if self.turn == MageType.AI else MageType.AI
 
+    def untried_actions(self, board):
+        all_actions = self.generate_actions(board)
+        tried_actions = {child.action for child in self.children}
+        untried = [actions for actions in all_actions if actions not in tried_actions]
+
+        return untried
+
     def generate_actions(self, board):
         actions = []
 
