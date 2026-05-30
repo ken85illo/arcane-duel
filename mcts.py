@@ -6,9 +6,8 @@ from enums import Spell, MageType
 from collections import deque
 
 class MCTS:
-    def __init__(self, simulation_depth = 15, max_iterations=10000):
+    def __init__(self, max_iterations=3000):
         self.max_iterations = max_iterations
-        self.simulation_depth = simulation_depth
 
     def mcts_best_action(self, board):
         root = MCTSNode(turn=MageType.PLAYER)
@@ -74,7 +73,7 @@ class MCTS:
 
     # Rollout plays random moves which will be used for simulation
     def _rollout(self, current_turn, board):
-        for _ in range(self.simulation_depth):  
+        while True:  
             temp_node = MCTSNode(turn=current_turn)
             actions = temp_node.generate_actions(board)
 
@@ -103,7 +102,6 @@ class MCTS:
             node.visits += 1
             node.value += score
             node = node.parent
-
 
     def apply_action(self, board, turn:MageType, action: tuple[tuple[int, int], Spell, tuple[int, int]]):
         move, spell, target = action
