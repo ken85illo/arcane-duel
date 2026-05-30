@@ -14,9 +14,9 @@ class BoardDisplay:
     def draw(self):
         self._draw_grid()
         self._draw_victory_lap()
-        self._draw_mages()
         self._draw_fire_anims()
         self._draw_freeze_anims()
+        self._draw_mages()
 
     def _draw_grid(self):
         game = self.game
