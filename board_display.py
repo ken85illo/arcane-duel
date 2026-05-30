@@ -2,13 +2,14 @@ import pygame
 from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
-from enums import Direction, MageType, Phase, Spell
+from enums import Direction, MageType, Phase, Spell, Winner
 from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
 
 class BoardDisplay:
     def __init__(self, game):
         self.game = game
         self.victory_lap_tiles = []
+        self.victory_lap_player = None
 
     def draw(self):
         self._draw_grid()
@@ -25,13 +26,14 @@ class BoardDisplay:
             for col in range(GridConfig.GRID_SIZE):
                 tile = game.board.get_tile(row, col)
                 rect = tile_rect(row, col)
-                text = self.game.font_lg.render(str(tile.mana), True, (37, 76, 39))
 
                 self._draw_platform(row, col)
 
                 if tile.is_active() or tile.is_frozen():
-                    if tile.mana > 0:
-                        self.game.screen.blit(text, rect)
+                    color = (57, 96, 150) if tile.mana <= 0 else (37, 76, 39) 
+                    text = self.game.font_lg.render(str(tile.mana), True, color)
+                    self.game.screen.blit(text, rect)
+
                     self._draw_active_tile_overlay(row, col, rect, overlay)
 
     def _draw_mages(self):
@@ -63,14 +65,14 @@ class BoardDisplay:
     
     
     def _draw_victory_lap(self):
-        color = (255, 80, 0, 50)
-        if self.game.winner == MageType.PLAYER:
+        if self.game.victory_lap_pending and self.game.victory_lap_pending[2]:
+            self.victory_lap_tiles.append(self.game.victory_lap_pending[2].pop())
+            self.victory_lap_player = self.game.victory_lap_pending[0]
+        
+        if self.victory_lap_player == MageType.PLAYER:
             color = (0, 0, 255, 100)
         else:
             color = (255, 0, 0, 100)
-
-        if self.game.victory_lap_pending and self.game.victory_lap_pending[2]:
-            self.victory_lap_tiles.append(self.game.victory_lap_pending[2].pop())
 
         for tile in self.victory_lap_tiles:
             rect = tile_rect(*tile)

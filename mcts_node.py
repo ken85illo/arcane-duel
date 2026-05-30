@@ -46,15 +46,27 @@ class MCTSNode:
         return actions
 
     def ucb1(self):
+        # Force exploration of unvisited nodes
         if self.visits == 0:
             return float("inf")
 
-        return (self.value / self.visits) + self.UCB_C * math.sqrt(
+        # choosing moves with higher average reward
+        exploitation = self.value / self.visits
+
+        # trying moves with less information
+        exploration = self.UCB_C * math.sqrt(
             math.log(self.parent.visits) / self.visits
         )
 
+        return exploitation + exploration
+
     def best_child(self):
-        return max(self.children, key=lambda child: child.ucb1())
+        if self.next_turn() == MageType.AI:
+            # AI chooses the best move that decreases the score of player
+            return max(self.children, key=lambda child: child.ucb1())
+        elif self.next_turn() == MageType.PLAYER:
+            # Player chooses the best move that decreases the score of AI
+            return min(self.children, key=lambda child: child.ucb1())
 
     def most_visited(self):
         return max(self.children, key=lambda child: child.visits)

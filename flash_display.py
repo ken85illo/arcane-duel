@@ -6,7 +6,7 @@ class FlashDisplay:
         self.game = game
 
     def draw(self):
-        surf = pygame.Surface((GridConfig.TILE_SIZE * GridConfig.GRID_SIZE, 70), pygame.SRCALPHA)
+        surf = pygame.Surface((GridConfig.TILE_SIZE * GridConfig.GRID_SIZE, 50), pygame.SRCALPHA)
         surf.fill((0, 0, 0, 160))
         self.game.screen.blit(surf, (0, 0))
         text = self.game.font_lg.render(self.game.flash_msg, True, PanelColors.GOLD)

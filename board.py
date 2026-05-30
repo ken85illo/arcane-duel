@@ -1,4 +1,5 @@
 import random
+from freeze_anim import FreezeAnim
 from tile import Tile
 from enums import Direction, TileState, Spell, MageType
 from ui_util import GridConfig
@@ -215,10 +216,14 @@ class Board:
             
     # ===== Per-turn changes ====
     
-    def turn_decrement_freeze_timer(self):
+    def turn_decrement_freeze_timer(self, freeze_anims = None):
         # Increment the timer of the freezed tile
         for row in self.grid:
             for tile in row:
+                if freeze_anims and tile.freeze_timer == 1:
+                    freeze_anims.append(
+                        FreezeAnim((tile.row, tile.col))
+                    )
                 tile.freeze_decrement()
     
     def turn_increase_cumulative_mana(self):
@@ -251,12 +256,8 @@ class Board:
         _, reachable_mana, visited = breadth_first_search(self, pos, enemy_pos)
         
         if who == MageType.PLAYER:
-            self.player_sprite.set_state(MageStates.WIN)
-            self.ai_sprite.set_state(MageStates.DEATH)
             final_mana = self.player_mana + reachable_mana
         else:
-            self.ai_sprite.set_state(MageStates.WIN)
-            self.player_sprite.set_state(MageStates.DEATH)
             final_mana = self.ai_mana + reachable_mana
 
         return who, final_mana, visited
