@@ -375,8 +375,9 @@ class Game:
             if self.victory_lap_pending[0] == MageType.PLAYER:
                 self.board.player_mana = min(self.board.player_mana + 1, self.victory_lap_pending[1])
                 new_mana = self.board.player_mana
+
             elif self.victory_lap_pending[0] == MageType.AI:
-                self.board.ai_mana += min(self.board.ai_mana + 1, self.victory_lap_pending[1])
+                self.board.ai_mana = min(self.board.ai_mana + 1, self.victory_lap_pending[1])
                 new_mana = self.board.ai_mana
             
             if new_mana >= self.victory_lap_pending[1]:
