@@ -1,6 +1,7 @@
 import random
 import sys
 import threading
+import time
 
 from freeze_anim import FreezeAnim
 from mcts import MCTS
@@ -97,7 +98,9 @@ class Game:
         self.update_valid_moves()
 
         self.victory_lap_pending = None
-        self.victory_lap_delay = 5
+        self.victory_lap_completed = False
+        self.victory_lap_delay = 10
+        self.victory_lap_pause = 300
         self.victory_lap_timer = self.victory_lap_delay
 
 
@@ -298,7 +301,7 @@ class Game:
         self._flash("AI's TURN ", t=60)
 
         self.board.turn_increase_cumulative_mana()
-        self.board.turn_decrement_freeze_timer()
+        self.board.turn_decrement_freeze_timer(self.freeze_anims)
 
         # Start the AI's turn
         self.phase = Phase.AI_MOVE
@@ -312,26 +315,27 @@ class Game:
             who, final_mana, _ = victory_lap_pending
             self._finish(who, final_mana)
 
+
+        # Checks if Player still has moveable spots after AI Turn
+        if turn == MageType.PLAYER and phase == Phase.PLAYER_MOVE and not self.board.valid_mage_moves(*self.board.player_pos):
+            self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
+            _finish_game(self.victory_lap_pending)
+            return True
+
         # Checks if Player still has valid spell targets during spell phase
         if turn == MageType.PLAYER and phase == Phase.PLAYER_SPELL and not self.board.valid_spell_targets(*self.board.player_pos):
             self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
             _finish_game(self.victory_lap_pending)
             return True
-
-        # Checks if Player still has moveable spots after AI Turn
-        if turn == MageType.PLAYER and not self.board.valid_mage_moves(*self.board.player_pos):
-            self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
-            _finish_game(self.victory_lap_pending)
-            return True
         
-        # Checks if AI still has valid spell targets during spell phase
-        if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
+        # Checks if AI still has moveable spots after Player Turn
+        if turn == MageType.AI and phase == Phase.AI_MOVE and not self.board.valid_mage_moves(*self.board.ai_pos):
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
-        
-        # Checks if AI still has moveable spots after Player Turn
-        if turn == MageType.AI and not self.board.valid_mage_moves(*self.board.ai_pos):
+
+        # Checks if AI still has valid spell targets during spell phase
+        if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
@@ -340,6 +344,7 @@ class Game:
         return False
 
     def _finish(self, who, final_mana):
+        self._flash(f"{"Player" if who == MageType.PLAYER else "AI"} enters the victory lap", t=10)
         player_mana, ai_mana = self.board.player_mana, self.board.ai_mana
         
         if who == MageType.PLAYER:
@@ -348,13 +353,26 @@ class Game:
             ai_mana = final_mana
 
         self.winner = Winner.PLAYER if player_mana > ai_mana else (Winner.AI if ai_mana > player_mana else Winner.DRAW)
+
+        win_sprite = self.player if self.winner == Winner.PLAYER else self.ai
+        lose_sprite = self.ai if self.winner == Winner.PLAYER else self.player
+
+        win_sprite.set_state(MageStates.WIN)
+        lose_sprite.set_state(MageStates.DEATH)
+
         self.phase = Phase.GAME_OVER
+
 
     def _trigger_victory_lap(self):
         if self.victory_lap_pending:
             if self.victory_lap_timer > 0:
                 self.victory_lap_timer -= 1
                 return True
+
+            if self.victory_lap_completed:
+                self.victory_lap_completed = False
+                self.victory_lap_pending = None
+                return False
 
             if self.victory_lap_pending[0] == MageType.PLAYER:
                 self.board.player_mana += 1
@@ -364,10 +382,11 @@ class Game:
                 new_mana = self.board.ai_mana
             
             if self.victory_lap_pending[1] <= new_mana:
-                self.victory_lap_pending = None
+                self.victory_lap_completed = True
+                self.victory_lap_timer = self.victory_lap_pause 
+                return True
             
             self.victory_lap_timer = self.victory_lap_delay
-            
             return True
         
         return False
@@ -389,8 +408,10 @@ class Game:
 
             if not best_action:
                 # if AI is stuck player wins via Victory Lap
-                self.board.victory_lap(MageType.PLAYER)
-                self._finish()
+                self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
+                who, final_mana, _ = self.victory_lap_pending
+                self._finish(who, final_mana)
+
                 return
             
             self.ai_delay = self.DELAY_THINK
@@ -516,8 +537,11 @@ class Game:
             
             self._flash("PLAYER's TURN ", t=100)
 
+
             self.board.turn_increase_cumulative_mana()
-            self.board.turn_decrement_freeze_timer()
+            self.board.turn_decrement_freeze_timer(self.freeze_anims)
+
+
             self.ai_delay = self.DELAY_FINISH
             self.ai_action = None
             self.ai_busy = False

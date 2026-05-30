@@ -32,6 +32,7 @@ class MCTS:
             time.sleep(0.001)
 
         if not root.children:
+            print("testingggg.......")
             moves = board.valid_mage_moves(*board.ai_pos)
             if not moves:
                 return None
@@ -132,8 +133,10 @@ class MCTS:
 
             tile = board.get_tile(*target)
             if spell == Spell.FREEZE:
-                if not tile.is_frozen():
-                    tile.freeze_tile()
+                if tile.is_frozen():
+                    return
+
+                tile.freeze_tile()
             elif spell == Spell.BURN:
                 tile.destroy_tile()
         

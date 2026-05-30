@@ -19,8 +19,8 @@ class PanelDisplay:
         y_pos = 12
 
         # Scorecards for each mage
-        y_pos = self._score_card(x_pos, y_pos, "PLAYER", self.game.board.player_mana, PanelColors.PLAYER, self.game.phase == Phase.PLAYER_MOVE)
-        y_pos = self._score_card(x_pos, y_pos, "AI", self.game.board.ai_mana, PanelColors.AI, self.game.phase == Phase.AI_MOVE) 
+        y_pos = self._score_card(x_pos, y_pos, MageType.PLAYER, self.game.board.player_mana, PanelColors.PLAYER, self.game.phase == Phase.PLAYER_MOVE)
+        y_pos = self._score_card(x_pos, y_pos, MageType.AI, self.game.board.ai_mana, PanelColors.AI, self.game.phase == Phase.AI_MOVE) 
 
         # Divider
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (x_pos, y_pos), (x_pos + self.PANEL_WIDTH - 28, y_pos))
@@ -38,7 +38,7 @@ class PanelDisplay:
         self._spell_btn(frozen, Spell.FREEZE, is_player_turn, "Freeze (-0)", PanelColors.BTN_FRZ, True)
         self._spell_btn(burn, Spell.BURN, is_player_turn, "Burn (-3)", PanelColors.BTN_BURN, can_afford_burn)
     
-    def _score_card(self, x, y, label, mana, color, is_active = False):
+    def _score_card(self, x, y, who, mana, color, is_active = False):
         height = 74
         card = pygame.Rect(x, y, self.PANEL_WIDTH - 28, height)
         bg_color = lerp(color, PanelColors.PANEL_FILL, 0.8) 
@@ -47,11 +47,16 @@ class PanelDisplay:
 
         border_width = 3 if is_active else 2
         background_color  = color if is_active else lerp(color, PanelColors.PANEL_LINE, 0.8)
-        draw_border(self.game.screen, background_color, card, radius=10)
-        
-        who_text = self.game.font_sm.render(label, True, color)
-        mana_score_text = self.game.font_xl.render(str(max(0, mana)), True, color)
-        mana_caption_text = self.game.font_sm.render("mana", True, color)
+        draw_border(self.game.screen, background_color, card, radius=10, width=border_width)
+
+
+        score_color = color
+        if self.game.victory_lap_pending and self.game.victory_lap_pending[0] == who:
+            score_color = (255, 255, 0)
+
+        who_text = self.game.font_sm.render("PLAYER" if who == MageType.PLAYER else "AI", True, color)
+        mana_score_text = self.game.font_xl.render(str(max(0, mana)), True, score_color)
+        mana_caption_text = self.game.font_sm.render("mana", True, score_color)
 
         self.game.screen.blit(who_text, (x + 10, y + 7))
         self.game.screen.blit(mana_score_text, (x + 10, y + 24))       
