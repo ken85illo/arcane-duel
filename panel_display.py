@@ -37,6 +37,9 @@ class PanelDisplay:
 
         self._spell_btn(frozen, Spell.FREEZE, is_player_turn, "Freeze (-0)", PanelColors.BTN_FRZ, True)
         self._spell_btn(burn, Spell.BURN, is_player_turn, "Burn (-3)", PanelColors.BTN_BURN, can_afford_burn)
+
+        text = self.game.font_sm.render("Press [esc] to go to main menu", True, PanelColors.GOLD)
+        self.game.screen.blit(text, (x_pos, 630))
     
     def _score_card(self, x, y, who, mana, color, is_active = False):
         height = 74
@@ -113,8 +116,8 @@ class PanelDisplay:
         button_x = board_width + 12
 
         return (
-            pygame.Rect(button_x, self.game.SCREEN_HEIGHT - 152, self.game.PANEL_WIDTH - 24, 50),
-            pygame.Rect(button_x, self.game.SCREEN_HEIGHT -  94, self.game.PANEL_WIDTH - 24, 50)
+            pygame.Rect(button_x, self.game.SCREEN_HEIGHT - 170, self.game.PANEL_WIDTH - 24, 50),
+            pygame.Rect(button_x, self.game.SCREEN_HEIGHT -  102, self.game.PANEL_WIDTH - 24, 50)
         )
 
     def _spell_btn(self, rect, kind: Spell, phase_active, label, color, affordable):

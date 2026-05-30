@@ -3,6 +3,7 @@ from enum import Enum, auto
 from board import Board
 from platform_sprite import Platform
 from enums import Direction, MageType, Phase, Spell, Winner
+from tile import Tile
 from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
 
 class BoardDisplay:
@@ -30,11 +31,25 @@ class BoardDisplay:
                 self._draw_platform(row, col)
 
                 if tile.is_active() or tile.is_frozen():
-                    color = (57, 96, 150) if tile.mana <= 0 else (37, 76, 39) 
+                    if not tile.is_cumulative:
+                        color = (37, 76, 39) 
+                    else:
+                        mana_text_colors = [
+                            (25, 45, 120),   # Dark Blue
+                            (40, 35, 140),
+                            (60, 30, 160),
+                            (85, 25, 180),
+                            (115, 20, 200),  # Dark Purple
+                        ]
+                        color = mana_text_colors[tile.mana - 1] 
+                        
                     text = self.game.font_lg.render(str(tile.mana), True, color)
                     self.game.screen.blit(text, rect)
 
                     self._draw_active_tile_overlay(row, col, rect, overlay)
+
+                if tile.is_frozen():
+                    self._draw_cumul_bar(rect, tile.freeze_timer, Tile.FREEZE_TILE_TIMER, (160, 220, 255), (40, 70, 100))
 
     def _draw_mages(self):
         game = self.game
@@ -148,6 +163,18 @@ class BoardDisplay:
             platform_index, GridConfig.TILE_SIZE, GridConfig.TILE_SIZE, is_dark=is_dark, is_frozen=is_frozen, is_cumulative=is_cumulative
         )
         game.screen.blit(platform, (x, y))
+
+    def _draw_cumul_bar(self, rect, value, max, fill_color, bg_color, border_radius=5):
+        value = min(value, max)
+        pos_x, pos_y = rect.x + 8, rect.bottom - 20
+        bar_width, bar_height = rect.width - 16, 10
+        pygame.draw.rect(self.game.screen, bg_color, (pos_x, pos_y, bar_width, bar_height), border_radius=border_radius)
+        fill = int(bar_width * (value / max))
+        if fill > 0:
+           pygame.draw.rect(self.game.screen, fill_color, (pos_x, pos_y, fill, bar_height), border_radius=border_radius) 
+
+        draw_border(self.game.screen, bg_color, pygame.Rect(pos_x, pos_y, bar_width, bar_height), radius=border_radius, width=3)
+
 
     def _get_platform_index(self, row, col):
         def is_platform(row, col):

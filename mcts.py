@@ -6,7 +6,7 @@ from enums import Spell, MageType
 from collections import deque
 
 class MCTS:
-    def __init__(self, max_iterations=3000):
+    def __init__(self, max_iterations=5000):
         self.max_iterations = max_iterations
 
     def mcts_best_action(self, board):
@@ -91,10 +91,13 @@ class MCTS:
     def _simulation(self, starting_turn, board):
         board = self._rollout(starting_turn, board)
 
-        ai_reachable_mana, player_reachable_mana = self._bfs_both(board)
+        ai_reachable_tiles, ai_reachable_mana, player_reachable_tiles, player_reachable_mana = self._bfs_both(board)
         mana_score = (board.ai_mana + ai_reachable_mana) - (board.player_mana + player_reachable_mana)
+        territory_score  = (ai_reachable_tiles - player_reachable_tiles) * 1.5
+        player_moves = len(board.valid_mage_moves(*board.player_pos))
+        isolation_bonus = max(0, 4 - player_moves) * 3.0
 
-        return mana_score 
+        return mana_score + territory_score + isolation_bonus
     
     # 4. Backpropagation: update all ancestors
     def _backpropagation(self, node, score):
@@ -134,8 +137,8 @@ class MCTS:
         board.turn_increase_cumulative_mana()
 
     def _bfs_both(self, board): 
-        _, ai_reachable_mana, _ = breadth_first_search(board, board.ai_pos, board.player_pos)
-        _, player_reachable_mana, _ = breadth_first_search(board, board.player_pos, board.ai_pos)
+        ai_reachable_tiles, ai_reachable_mana, _ = breadth_first_search(board, board.ai_pos, board.player_pos)
+        player_reachable_tiles, player_reachable_mana, _ = breadth_first_search(board, board.player_pos, board.ai_pos)
         
-        return ai_reachable_mana, player_reachable_mana
+        return ai_reachable_tiles, ai_reachable_mana, player_reachable_tiles, player_reachable_mana
 

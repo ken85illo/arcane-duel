@@ -19,9 +19,6 @@ class Board:
                 if row == 0 or row == GridConfig.GRID_SIZE - 1 or col == 0 or col == GridConfig.GRID_SIZE - 1:
                     grid[row][col].state = TileState.WALL
 
-        # Set the mana of the starting points to 0
-        grid[self.player_pos[0]][self.player_pos[1]].mana = 0
-        grid[self.ai_pos[0]][self.ai_pos[1]].mana = 0
         
         return grid
 
@@ -41,16 +38,23 @@ class Board:
 
 
         # Place the player on top-middle of the board
-        self.player_pos = (1, GridConfig.GRID_SIZE // 2)
+        self.player_pos = (1 + 1, GridConfig.GRID_SIZE // 2)
 
         # Place the AI on bottom-middle of the board
-        self.ai_pos = (GridConfig.GRID_SIZE - 2, GridConfig.GRID_SIZE // 2)
+        self.ai_pos = (GridConfig.GRID_SIZE - 2 - 1, GridConfig.GRID_SIZE // 2)
 
         # Initialize the grid and mage positions
         self.grid = self._init_grid()
         
         # Randomize cumulative tile positions
         self._assign_random_cumulative_tiles()
+
+        # Set the mana of the starting points to 0 and plain tile
+        self.get_tile(*self.player_pos).mana = 0
+        self.get_tile(*self.ai_pos).mana = 0
+        
+        self.get_tile(*self.player_pos).is_cumulative = False
+        self.get_tile(*self.ai_pos).is_cumulative = False
         
         # Set both mages a 0 starting mana
         self.player_mana = 1
@@ -73,6 +77,7 @@ class Board:
 
         self.player_sprite = player_sprite
         self.ai_sprite = ai_sprite
+
 
     # ===== Helper Function =====
     def get_tile(self, row, col):        
