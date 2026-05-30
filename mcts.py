@@ -6,7 +6,7 @@ from enums import Spell, MageType, Spell
 from collections import deque
 
 class MCTS:
-    def __init__(self, simulation_depth = 10, max_iterations=3000):
+    def __init__(self, simulation_depth = 30, max_iterations=3000):
         self.max_iterations = max_iterations
         self.simulation_depth = simulation_depth
 
@@ -32,7 +32,6 @@ class MCTS:
             time.sleep(0.001)
 
         if not root.children:
-            print("testingggg.......")
             moves = board.valid_mage_moves(*board.ai_pos)
             if not moves:
                 return None
@@ -53,7 +52,7 @@ class MCTS:
     def _selection(self, node, board):
         while node.children and not node.untried_actions(board):
             node = node.best_child()
-            self._apply_move(board, node.turn, node.action)
+            self.apply_action(board, node.turn, node.action)
 
         return node, board
     
@@ -69,7 +68,7 @@ class MCTS:
             child = MCTSNode(next_turn, action=action, parent=node)
             node.children.append(child)
 
-            self._apply_move(board, next_turn, action)
+            self.apply_action(board, next_turn, action)
             node = child
 
         return node, board
@@ -85,7 +84,7 @@ class MCTS:
 
             next_turn = temp_node.next_turn()
             action = random.choice(actions)
-            self._apply_move(board, next_turn, action)
+            self.apply_action(board, next_turn, action)
             current_turn = next_turn
         
         return board
@@ -107,7 +106,7 @@ class MCTS:
             node = node.parent
 
 
-    def _apply_move(self, board, turn:MageType, action: tuple[tuple[int, int], Spell, tuple[int, int]]):
+    def apply_action(self, board, turn:MageType, action: tuple[tuple[int, int], Spell, tuple[int, int]]):
         move, spell, target = action
 
         board.apply_move(turn, *move)
