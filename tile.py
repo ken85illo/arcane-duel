@@ -2,6 +2,9 @@ import random
 from enums import TileState
 
 class Tile:
+    FREEZE_TILE_TIMER = 5
+    CUMULATE_MANA_MAX = 5
+
     def __init__(self, row, col):
         self.row = row
         self.col = col
@@ -25,7 +28,7 @@ class Tile:
     
     def freeze_tile(self):
         self.state = TileState.FROZEN
-        self.freeze_timer = 6 # CHANGE ME
+        self.freeze_timer = self.FREEZE_TILE_TIMER + 1 # CHANGE ME
 
     def unfreeze_tile(self):
         self.state = TileState.ACTIVE
@@ -53,7 +56,7 @@ class Tile:
     # Cumulative Mana Tile Chance Increase
     def cumulate_mana(self):
         # Runs if the tile is cumulative, active, and the mana is under 5 (max)
-        if self.is_cumulative and self.state == TileState.ACTIVE and self.mana < 5:
+        if self.is_cumulative and self.state == TileState.ACTIVE and self.mana < self.CUMULATE_MANA_MAX:
             
             # 15% Chance of increasing by 1 mana value
             if random.randint(1, 100) <= 15: 

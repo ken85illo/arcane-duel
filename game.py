@@ -65,7 +65,7 @@ class Game:
         self._update_tile_size()
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase = Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
+        self.phase = self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn
@@ -151,6 +151,10 @@ class Game:
                 pygame.quit()
                 sys.exit()    
             
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                self.phase = Phase.MAIN_MENU
+                return
+
             # When Game Over, restarts on 'R' key press
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r and self.phase == Phase.GAME_OVER:
                 self._new_game()
@@ -290,7 +294,6 @@ class Game:
                 else:
                     self.board.ai_directiion = Direction.LEFT if col < old_col else Direction.RIGHT
                 
-
     def _end_player_turn(self):
         # Check if AI is trapped before next turn starts
         if self.check_game_over(MageType.AI, Phase.AI_MOVE):
@@ -397,25 +400,29 @@ class Game:
     DELAY_SPELL  = 100
     DELAY_FINISH = 10
 
-
     def start_ai_calculation(self):
         self.ai_stage = AIState.THINKING
 
         def ai_calculation(board, mcts):
-            best_action = mcts.mcts_best_action(board)
-            self.ai_action = best_action
+            try:
+                best_action = mcts.mcts_best_action(board)
 
-            if not best_action:
-                # if AI is stuck player wins via Victory Lap
-                self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
-                who, final_mana, _ = self.victory_lap_pending
-                self._finish(who, final_mana)
+                self.ai_action = best_action
 
+                if not best_action:
+                    self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER)
+                    who, final_mana, _ = self.victory_lap_pending
+                    self._finish(who, final_mana)
+                    return
+
+                self.ai_delay = self.DELAY_THINK
+                self.ai_action = best_action
+                self.ai_stage = AIState.MOVING
+
+            except Exception:
+                # Ignore thread errors caused by menu changes,
+                # game resets, grid size changes, etc.
                 return
-            
-            self.ai_delay = self.DELAY_THINK
-            self.ai_action = best_action
-            self.ai_stage = AIState.MOVING
 
         # Run mcts in the background
         worker = threading.Thread(target=ai_calculation, args=(self.board, self.mcts), daemon=True)
@@ -424,8 +431,7 @@ class Game:
         
 
     def _update(self):
-
-        if self._trigger_victory_lap() or self._is_any_anim_running():
+        if self._trigger_victory_lap():
             return
 
         if self.flash_timer > 0 :
@@ -536,10 +542,8 @@ class Game:
             
             self._flash("PLAYER's TURN ", t=100)
 
-
             self.board.turn_increase_cumulative_mana()
             self.board.turn_decrement_freeze_timer(self.freeze_anims)
-
 
             self.ai_delay = self.DELAY_FINISH
             self.ai_action = None
@@ -626,12 +630,3 @@ class Game:
 
 if __name__ == "__main__":
     Game().run()
-        
-    
-    
-
-
-
-
-
-
