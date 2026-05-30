@@ -65,7 +65,7 @@ class Game:
         self._update_tile_size()
         self.player = Mage(False)
         self.ai = Mage(True)
-        self.phase = Phase.PLAYER_MOVE # self._randomize_starting_turn() # Starting turn
+        self.phase = self._randomize_starting_turn() # Starting turn
         self.board = Board(self.player, self.ai) # Starting board
         self.hover_tile   = None # Grid position under the mouse cursor
         self.valid_player_move_set = set() # Valid movement targets for the player this turn

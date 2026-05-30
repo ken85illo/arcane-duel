@@ -1,0 +1,347 @@
+
+MCTS REVIEW: WHY THE CURRENT AI FEELS WEAKER THAN arcane_duel.py
+
+====================================================================
+SUMMARY
+====================================================================
+
+The primary issue is not the number of iterations.
+
+Your implementation runs approximately 3000 iterations while the
+Claude implementation defaults to around 700.
+
+The larger problem is that the search is evaluating weaker information
+and may contain structural issues that reduce decision quality.
+
+Priority ranking:
+
+1. Evaluation function is too simple.
+2. Turn handling is overly complex and potentially incorrect.
+3. Random rollouts add a large amount of noise.
+4. Burn simulation does not fully match game rules.
+5. Territory and mobility are not considered.
+6. Artificial delay slows down search.
+
+====================================================================
+1. EVALUATION FUNCTION IS TOO SIMPLE
+====================================================================
+
+Current evaluation:
+
+    mana_score =
+        (ai_mana + ai_reachable_mana)
+        -
+        (player_mana + player_reachable_mana)
+
+This only rewards:
+
+- Current mana
+- Reachable mana
+
+It ignores:
+
+- Territory control
+- Opponent mobility
+- Trapping opportunities
+- Board dominance
+
+Result:
+
+The AI often prefers moves that gain mana instead of moves that
+strategically corner the opponent.
+
+--------------------------------------------------------------------
+Suggested Improvement
+--------------------------------------------------------------------
+
+Add territory evaluation:
+
+    territory_score =
+        (ai_reachable_tiles - player_reachable_tiles) * 1.5
+
+Add mobility pressure:
+
+    player_moves = len(board.valid_mage_moves(*board.player_pos))
+
+    isolation_bonus = max(0, 4 - player_moves) * 3
+
+Final score:
+
+    score =
+        mana_score
+        + territory_score
+        + isolation_bonus
+
+Expected result:
+
+The AI begins valuing moves that reduce the player's options.
+
+====================================================================
+2. TURN HANDLING LOOKS CONFUSING
+====================================================================
+
+Current implementation frequently uses:
+
+    self.next_turn()
+
+inside action generation.
+
+Example:
+
+    if self.next_turn() == MageType.AI:
+
+instead of:
+
+    if self.turn == MageType.AI:
+
+The root node is initialized as:
+
+    root = MCTSNode(turn=MageType.PLAYER)
+
+even though the AI is making the decision.
+
+This suggests the implementation is compensating for turn inversion.
+
+Potential risks:
+
+- Wrong side generating actions
+- Wrong side being evaluated
+- Hard-to-debug search behavior
+
+--------------------------------------------------------------------
+Suggested Improvement
+--------------------------------------------------------------------
+
+Each node should represent:
+
+    "Whose turn is it right now?"
+
+Action generation should use:
+
+    self.turn
+
+not
+
+    self.next_turn()
+
+Recommended structure:
+
+    node.turn = AI
+
+Generate AI actions
+
+Expand child
+
+Child.turn = PLAYER
+
+Generate PLAYER actions
+
+Expand child
+
+Child.turn = AI
+
+Continue alternating naturally.
+
+====================================================================
+3. RANDOM ROLLOUTS CREATE NOISE
+====================================================================
+
+Current rollout:
+
+    action = random.choice(actions)
+
+for many simulation steps.
+
+This creates situations where:
+
+- AI makes a good move
+- Both sides then play randomly
+- Final score becomes noisy
+
+The quality of the first move becomes difficult to measure.
+
+--------------------------------------------------------------------
+Suggested Improvement A
+--------------------------------------------------------------------
+
+Remove rollouts entirely.
+
+After expansion:
+
+    score = evaluate(board)
+
+This is what the Claude implementation effectively does.
+
+--------------------------------------------------------------------
+Suggested Improvement B
+--------------------------------------------------------------------
+
+Keep rollouts but use heuristics.
+
+Examples:
+
+- Prefer mana-rich tiles
+- Prefer trapping moves
+- Prefer freezing important paths
+
+This creates more realistic simulations.
+
+====================================================================
+4. BURN SIMULATION DOES NOT MATCH REAL GAME RULES
+====================================================================
+
+In the real game:
+
+Burn:
+
+- Costs mana
+- Can thaw frozen tiles
+- Can refund mana after shattering
+
+Inside MCTS simulation:
+
+    tile.destroy_tile()
+
+Only the tile state changes.
+
+Mana economy is not fully simulated.
+
+Result:
+
+The search is evaluating a slightly different game than the one being
+played.
+
+--------------------------------------------------------------------
+Suggested Improvement
+--------------------------------------------------------------------
+
+Use the same spell logic inside MCTS as the real game.
+
+Preferably:
+
+    board.apply_spell(...)
+
+or a simulation-safe equivalent.
+
+The closer the simulation matches reality, the better MCTS performs.
+
+====================================================================
+5. TERRITORY IS NOT MEASURED
+====================================================================
+
+Current BFS evaluation only considers:
+
+    reachable mana
+
+It does not consider:
+
+    reachable tile count
+
+Example:
+
+Position A:
+
+    AI reachable mana = 10
+    Player reachable mana = 10
+
+Position B:
+
+    AI controls 25 tiles
+    Player controls 3 tiles
+
+Current evaluation may treat them similarly.
+
+In reality Position B is usually much stronger.
+
+--------------------------------------------------------------------
+Suggested Improvement
+--------------------------------------------------------------------
+
+Track:
+
+    reachable_tile_count
+
+alongside:
+
+    reachable_mana
+
+Reward positions where:
+
+- AI has more accessible space
+- Player has less accessible space
+
+====================================================================
+6. REMOVE THE FORCED DELAY
+====================================================================
+
+Current code:
+
+    time.sleep(0.001)
+
+inside every iteration.
+
+At 3000 iterations:
+
+    3000 * 0.001 = 3 seconds
+
+spent doing nothing.
+
+--------------------------------------------------------------------
+Suggested Improvement
+--------------------------------------------------------------------
+
+Remove:
+
+    time.sleep(0.001)
+
+Expected results:
+
+- Faster turns
+- More simulations
+- Better search quality
+
+====================================================================
+RECOMMENDED IMPLEMENTATION ORDER
+====================================================================
+
+Step 1 (Highest Impact)
+
+Improve evaluation function:
+
+- Mana difference
+- Territory difference
+- Mobility penalty
+
+Step 2
+
+Fix turn representation:
+
+- Use self.turn directly
+- Remove dependence on next_turn() for action generation
+
+Step 3
+
+Remove random rollouts or replace them with heuristic rollouts.
+
+Step 4
+
+Make Burn simulation match actual game rules.
+
+Step 5
+
+Remove time.sleep().
+
+====================================================================
+EXPECTED RESULT
+====================================================================
+
+After implementing only the evaluation improvements, the AI should:
+
+- Trap players more often
+- Value board control more highly
+- Use Freeze more strategically
+- Prioritize limiting player movement
+- Feel significantly smarter even without increasing iterations
+
+After fixing the remaining issues, the MCTS should become both
+stronger and more consistent.
