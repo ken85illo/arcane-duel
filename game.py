@@ -187,6 +187,8 @@ class Game:
             if clicked_tile and clicked_tile in self.valid_player_move_set:
                 old_pos = self.board.player_pos
                 new_row, new_col = clicked_tile
+                tile = self.board.get_tile(new_row, new_col)
+                mana = tile.mana
 
                 self.board.apply_move(MageType.PLAYER, new_row, new_col)
                 self.update_valid_spells()
@@ -196,10 +198,9 @@ class Game:
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
 
-                tile = self.board.get_tile(new_row, new_col)
                 # LOG MESSAGE 
                 self.log_add({"src": MageType.PLAYER, "msg": f"Player moves to ({new_row}, {new_col})"})
-                self.log_add({"src": MageType.PLAYER, "msg": f"Player stepped on +{tile.mana} mana"})
+                self.log_add({"src": MageType.PLAYER, "msg": f"Player stepped on +{mana} mana"})
                 
                 self._flash("Player Spell Phase", t=60)
             else:

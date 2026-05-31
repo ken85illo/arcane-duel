@@ -148,6 +148,8 @@ class Board:
             tile = self.get_tile(row, col)
             self.player_mana += tile.mana
             tile.mana = 0
+            tile.is_cumulative = False
+
             self.player_pos = (row, col)
 
             if self.player_sprite:
@@ -166,6 +168,7 @@ class Board:
             tile = self.get_tile(row, col)
             self.ai_mana += tile.mana
             tile.mana = 0
+            tile.is_cumulative = False
             self.ai_pos = (row, col)
 
             if self.ai_sprite:
