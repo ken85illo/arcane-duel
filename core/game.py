@@ -473,10 +473,6 @@ class Game:
             self.ai_delay -= 1
             return
         
-        # If there are active fire animations, wait for them to finish
-        
-        if self.fire_anims:
-            return
 
         if self.ai_stage == AIState.START:
             self.start_ai_calculation()
