@@ -13,6 +13,8 @@ from enums import MageType, Spell, Winner
 
 from fire_anim import FireAnim
 from move_anim import MoveAnim
+from tile_destroy_anim import TileDestroyAnim
+from transition import Transition
 from ui_util import GridConfig
 
 from board_display import BoardDisplay, tile_rect
@@ -94,7 +96,11 @@ class Game:
         self.move_anims = []
         self.fire_anims = []
         self.freeze_anims = []
+        self.tile_destroy_anims = []
         self.pending_spells = []  # queued spells to apply on animation impact
+        self.transition = Transition(self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
+
+
         self.update_valid_moves()
 
         self.victory_lap_pending = None
@@ -102,7 +108,6 @@ class Game:
         self.victory_lap_delay = 10
         self.victory_lap_pause = 300
         self.victory_lap_timer = self.victory_lap_delay
-
 
 
     def _update_tile_size(self):
@@ -186,6 +191,8 @@ class Game:
                 self.board.apply_move(MageType.PLAYER, new_row, new_col)
                 self.update_valid_spells()
                 self.move_anims.append(MoveAnim(MageType.PLAYER, old_pos, clicked_tile))
+                self.tile_destroy_anims.append(TileDestroyAnim(old_pos))
+
                 self.phase = Phase.PLAYER_SPELL # Transition to spell phase after a move
                 self.spell_choice = None
 
@@ -319,24 +326,28 @@ class Game:
 
         # Checks if Player still has moveable spots after AI Turn
         if turn == MageType.PLAYER and phase == Phase.PLAYER_MOVE and not self.board.valid_mage_moves(*self.board.player_pos):
+            self.log_add({"src": MageType.PLAYER, "msg": "Player has no more possible moves!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
             _finish_game(self.victory_lap_pending)
             return True
 
         # Checks if Player still has valid spell targets during spell phase
         if turn == MageType.PLAYER and phase == Phase.PLAYER_SPELL and not self.board.valid_spell_targets(*self.board.player_pos):
+            self.log_add({"src": MageType.PLAYER, "msg": "Player has no more possible spell targets!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
             _finish_game(self.victory_lap_pending)
             return True
         
         # Checks if AI still has moveable spots after Player Turn
         if turn == MageType.AI and phase == Phase.AI_MOVE and not self.board.valid_mage_moves(*self.board.ai_pos):
+            self.log_add({"src": MageType.AI, "msg": "AI has no more possible moves!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
 
         # Checks if AI still has valid spell targets during spell phase
         if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
+            self.log_add({"src": MageType.AI, "msg": "Player has no more possible spell targets!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
@@ -467,6 +478,7 @@ class Game:
             self.ai_delay = self.DELAY_MOVE
             self.ai_stage = AIState.CASTING_SPELL
             self.move_anims.append(MoveAnim(MageType.AI, old_pos, move))
+            self.tile_destroy_anims.append(TileDestroyAnim(old_pos))
 
             # LOG MESSAGE
             self.log_add({"src": MageType.AI, "msg": f"AI moves to ({move[0]}, {move[1]})"})
@@ -561,14 +573,16 @@ class Game:
         self.player.update()
         self.ai.update()
 
-        for animation in self.move_anims:     
-            animation.anim_update()
+        all_anims = (
+            self.move_anims, 
+            self.fire_anims, 
+            self.freeze_anims, 
+            self.tile_destroy_anims
+        )
 
-        for animation in self.fire_anims:
-            animation.anim_update()
-
-        for animation in self.freeze_anims:
-            animation.anim_update()
+        for anim_list in all_anims:
+            for animation in anim_list:
+                animation.anim_update()
             
         # Apply pending spells when their fire animation reaches impact
         remaining_pending = []
@@ -587,19 +601,23 @@ class Game:
                 spell = pending['spell']
                 row, col = target
                 self.board.apply_spell(who, spell, row, col)
+
+                tile = self.board.get_tile(row, col)
+
+                if not tile.is_active() and not tile.is_frozen():
+                    self.tile_destroy_anims.append(TileDestroyAnim((row, col)))
             else:
                 remaining_pending.append(pending)
 
         self.pending_spells = remaining_pending
 
         # Remove completed animations after applying pending spells
-        self.move_anims = [animation for animation in self.move_anims if not animation.anim_done()]
-        self.fire_anims = [animation for animation in self.fire_anims if not animation.anim_done()]
-        self.freeze_anims = [animation for animation in self.freeze_anims if not animation.anim_done()]
+        for anims in all_anims:
+            anims[:] = [anim for anim in anims if not anim.anim_done()]
 
 
     def _is_any_anim_running(self):
-        return (self.move_anims or self.fire_anims or self.freeze_anims)
+        return (self.move_anims or self.fire_anims or self.freeze_anims or self.tile_destroy_anims)
                 
     # ===== Main Game Loop =====
     def run(self):
@@ -619,11 +637,16 @@ class Game:
             self.board_display.draw()
             self.panel_display.draw()
 
+            if not self.transition.done():
+                self.transition.draw(self.screen)
+                self.transition.update()
+
             if self.phase == Phase.GAME_OVER and not self.victory_lap_pending:
                 self.game_over_display.draw()
 
             if self.flash_timer > 0:
                 self.flash_display.draw()
+
             
             pygame.display.flip()
             self.clock.tick(60)

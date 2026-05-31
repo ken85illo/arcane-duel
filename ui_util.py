@@ -24,7 +24,7 @@ class PanelColors:
     WHITE     = (255, 255, 255)
     BLACK     = (  0,   0,   0)
 
-    
+
 
 # ===== HIGHLIGHT COLORS ======
 class HighlightColors:
