@@ -228,7 +228,7 @@ class Board:
         # Increment the timer of the freezed tile
         for row in self.grid:
             for tile in row:
-                if freeze_anims and tile.freeze_timer == 1:
+                if freeze_anims is not None and tile.freeze_timer == 1:
                     freeze_anims.append(
                         FreezeAnim((tile.row, tile.col))
                     )

@@ -5,7 +5,7 @@ import time
 
 from graphics.freeze_anim import FreezeAnim
 from ai.mcts import MCTS
-from core.enums import Phase, AIState, Winner, Direction
+from core.enums import Phase, AIState, TileState, Winner, Direction
 from core.board import Board
 from core.mage import Mage, MageStates
 from core.enums import MageType, Spell
@@ -69,6 +69,7 @@ class Game:
         
         self.phase = Phase.MAIN_MENU
         self.main_menu_display = MainMenuDisplay(self)
+        self.player_finish_turn = False
     
     # ===== Game Setup =====
     def _new_game(self):
@@ -193,6 +194,10 @@ class Game:
 
                 if self.phase == Phase.PLAYER_SPELL:
                     self._handle_player_click(mx, my)
+
+        if self.player_finish_turn:
+            self._end_player_turn()
+
     
     def _handle_player_click(self, mx, my):
         clicked_tile = self._tile_at(mx, my)
@@ -224,7 +229,7 @@ class Game:
                 self._flash("Invalid Move", t=60)
                 return # Invalid move, do nothing
         
-        elif self.phase == Phase.PLAYER_SPELL:
+        elif self.phase == Phase.PLAYER_SPELL and not self.player_finish_turn:
             # Check if Player is trapped before spell phase
             if self.check_game_over(MageType.PLAYER, Phase.PLAYER_SPELL): 
                 return
@@ -301,7 +306,7 @@ class Game:
                     )
                     self.board.apply_spell(MageType.PLAYER, self.spell_choice, row, col)
 
-                self._end_player_turn()
+                self.player_finish_turn = True
         
         else:
             return # Not player's turn, do nothing
@@ -320,6 +325,11 @@ class Game:
                     self.board.ai_directiion = Direction.LEFT if col < old_col else Direction.RIGHT
                 
     def _end_player_turn(self):
+        if self.pending_spells or self.player.state != MageStates.IDLE:
+            return
+
+        self.player_finish_turn = False
+
         # Check if AI is trapped before next turn starts
         if self.check_game_over(MageType.AI, Phase.AI_MOVE):
             return
@@ -474,7 +484,7 @@ class Game:
             return
         
 
-        if self.ai_stage == AIState.START:
+        if self.ai_stage == AIState.START and not self.pending_spells:
             self.start_ai_calculation()
             return
 
@@ -616,6 +626,7 @@ class Game:
                 row, col = target
                 self.board.apply_spell(who, spell, row, col)
 
+            
                 tile = self.board.get_tile(row, col)
 
                 if not tile.is_active() and not tile.is_frozen():

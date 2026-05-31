@@ -159,7 +159,7 @@ class BoardDisplay:
             overlay.fill(HighlightColors.MOVE_FILL)
             game.screen.blit(overlay, rect.topleft)
             draw_border(game.screen, HighlightColors.MOVE_BORDER, rect)
-        elif self.game.spell_choice and game.phase == Phase.PLAYER_SPELL and (row, col) in game.valid_player_spell_set:
+        elif self.game.spell_choice and game.phase == Phase.PLAYER_SPELL and (row, col) in game.valid_player_spell_set and not self.game.player_finish_turn:
             if self.game.spell_choice == Spell.FREEZE and self.game.board.get_tile(row, col).is_frozen():
                 return
 
