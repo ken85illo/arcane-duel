@@ -1,6 +1,7 @@
 import pygame
 import random
 from ui.util import PanelColors, GridConfig
+from core.enums import MenuBoardSize, MenuDifficulty 
 
 class MainMenuDisplay:
     BUTTON_WIDTH = 260
@@ -9,6 +10,8 @@ class MainMenuDisplay:
     def __init__(self, game):
         self.game = game
         self.particles = [self._new_particle() for _ in range(60)]
+        self.selected_board = MenuBoardSize.SEVEN_BY_SEVEN
+        self.selected_difficulty = MenuDifficulty.MEDIUM
 
     def _create_buttons(self, x_pos, y_pos, width, height, color, text, text_size, text_color):
         button_rect = pygame.Rect(
@@ -62,58 +65,92 @@ class MainMenuDisplay:
         title_text = self.game.font_xl.render("ARCANE DUEL", True, PanelColors.GOLD)
         subtitle_text = self.game.font_md.render("Monte Carlo Tree and BFS-Driven Strategy Game", True, PanelColors.TEXT_DIM)
         grid_text = self.game.font_md.render("BOARD SIZE", True, PanelColors.TEXT_DIM)
-        hint_text = self.game.font_sm.render("Choose an option to begin", True, PanelColors.TEXT_DIM)
+        difficulty_text = self.game.font_md.render("AI DIFFICULTY", True, PanelColors.TEXT_DIM)
 
         # GRID OPTION BUTTONS
         button_width = 100
         button_height = 40
         button_spacing = 20
-        button_color = (255, 210,  55, 0)
-        button_outline_color = (200, 155, 0, 0)
+        selected_button_outline_color = (255, 255, 255)
+        board_button_color = (255, 210,  55, 0)
+        board_button_outline_color = (200, 155, 0, 0)
+        diff_button_color = (96, 194, 235)
+        diff_button_outline_color = (40, 160, 210)
         total_width = button_width * 3 + button_spacing * 2
         start_x = CENTER_X - total_width // 2
-        button_y = SCREEN_H - 255
+        button_y = SCREEN_H // 2
 
-        overlay = pygame.Surface((button_width, button_height), pygame.SRCALPHA)
-
-        button_outline = pygame.Rect(start_x - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
-        pygame.draw.rect(self.game.screen, button_outline_color, button_outline, border_radius=14)
+        # BOARD SIZE OPTIONS
+        board_button_outline = pygame.Rect(start_x - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, board_button_outline_color if self.selected_board != MenuBoardSize.FIVE_BY_FIVE else selected_button_outline_color, board_button_outline, border_radius=14)
 
         self.sm_grid_button = self._create_buttons(x_pos=start_x, y_pos=button_y, 
                                                       width=button_width, height=button_height, 
-                                                      color=button_color, text="5x5", 
+                                                      color=board_button_color, text="5x5", 
                                                       text_size="sm", text_color=(0,0,0))
         
-        button_outline = pygame.Rect(start_x + button_width + button_spacing - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
-        pygame.draw.rect(self.game.screen, button_outline_color, button_outline, border_radius=14)
+        board_button_outline = pygame.Rect(start_x + button_width + button_spacing - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, board_button_outline_color if self.selected_board != MenuBoardSize.SEVEN_BY_SEVEN else selected_button_outline_color, board_button_outline, border_radius=14)
 
         self.md_grid_button = self._create_buttons(x_pos=start_x + button_width + button_spacing, y_pos=button_y, 
                                                       width=button_width, height=button_height, 
-                                                      color=button_color, text="7x7", 
+                                                      color=board_button_color, text="7x7", 
                                                       text_size="sm", text_color=(0,0,0))
 
-        button_outline = pygame.Rect(start_x + (button_width + button_spacing) * 2 - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
-        pygame.draw.rect(self.game.screen, button_outline_color, button_outline, border_radius=14)
+        board_button_outline = pygame.Rect(start_x + (button_width + button_spacing) * 2 - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, board_button_outline_color if self.selected_board != MenuBoardSize.NINE_BY_NINE else selected_button_outline_color, board_button_outline, border_radius=14)
 
         self.lg_grid_button = self._create_buttons(x_pos=start_x + (button_width + button_spacing) * 2, y_pos=button_y, 
                                                       width=button_width, height=button_height, 
-                                                      color=button_color, text="9x9", 
+                                                      color=board_button_color, text="9x9", 
                                                       text_size="sm", text_color=(0,0,0))
         
+        # MCTS INTELLIGENCE OPTIONS
+        diff_y = button_y + button_height + 50
+
+        diff_button_outline = pygame.Rect(start_x - 3.5, diff_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, diff_button_outline_color if self.selected_difficulty != MenuDifficulty.EASY else selected_button_outline_color, diff_button_outline, border_radius=14)
+
+        self.easy_diff_button = self._create_buttons(x_pos=start_x, y_pos=diff_y, 
+                                                      width=button_width, height=button_height, 
+                                                      color=diff_button_color, text="easy", 
+                                                      text_size="sm", text_color=(0,0,0))
         
-        self.game.screen.blit(title_text, (SCREEN_W // 2 - title_text.get_width() // 2, SCREEN_H // 2 - 120))
-        self.game.screen.blit(subtitle_text, (SCREEN_W // 2 - subtitle_text.get_width() // 2, SCREEN_H // 2 - 72))
-        self.game.screen.blit(grid_text, (SCREEN_W // 2 - grid_text.get_width() // 2, button_y - 50))
-        self.game.screen.blit(hint_text, (SCREEN_W // 2 - hint_text.get_width() // 2, SCREEN_H - 50))
+        diff_button_outline = pygame.Rect(start_x + button_width + button_spacing - 3.5, diff_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, diff_button_outline_color if self.selected_difficulty != MenuDifficulty.MEDIUM else selected_button_outline_color, diff_button_outline, border_radius=14)
+
+        self.medium_diff_button = self._create_buttons(x_pos=start_x + button_width + button_spacing, y_pos=diff_y, 
+                                                      width=button_width, height=button_height, 
+                                                      color=diff_button_color, text="medium", 
+                                                      text_size="sm", text_color=(0,0,0))
+
+        diff_button_outline = pygame.Rect(start_x + (button_width + button_spacing) * 2 - 3.5, diff_y - 3.5, button_width + 7, button_height + 7,)
+        pygame.draw.rect(self.game.screen, diff_button_outline_color if self.selected_difficulty != MenuDifficulty.HARD else selected_button_outline_color, diff_button_outline, border_radius=14)
+
+        self.hard_diff_button = self._create_buttons(x_pos=start_x + (button_width + button_spacing) * 2, y_pos=diff_y, 
+                                                      width=button_width, height=button_height, 
+                                                      color=diff_button_color, text="hard", 
+                                                      text_size="sm", text_color=(0,0,0))
+        
+        # START BUTTON
+        self.start_button = self._create_buttons(x_pos=CENTER_X - 360//2, y_pos=SCREEN_H - 70, 
+                                                      width=360, height=button_height, 
+                                                      color=PanelColors.BTN_DIM, text="START GAME", 
+                                                      text_size="sm", text_color=PanelColors.TEXT)
+
+        self.game.screen.blit(title_text, (SCREEN_W // 2 - title_text.get_width() // 2, SCREEN_H // 2 - 155))
+        self.game.screen.blit(subtitle_text, (SCREEN_W // 2 - subtitle_text.get_width() // 2, SCREEN_H // 2 - 105))
+        self.game.screen.blit(grid_text, (SCREEN_W // 2 - grid_text.get_width() // 2, button_y - 30))
+        self.game.screen.blit(difficulty_text, (SCREEN_W // 2 - difficulty_text.get_width() // 2, diff_y - 30))
 
         # Decorative line
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE,
-                         (CENTER_X - 200, button_y - 20), (CENTER_X + 200, button_y - 20), 1)
+                         (CENTER_X - 200, button_y - 50), (CENTER_X + 200, button_y - 50), 1)
 
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE,
-                         (CENTER_X - 200, button_y + button_height + 15), (CENTER_X + 200, button_y + button_height + 15), 1)                         
+                         (CENTER_X - 200, button_y + button_height + 120), (CENTER_X + 200, button_y + button_height + 120), 1)                         
 
-        self.handle_hover(overlay)
+        self.handle_hover()
 
 
         # Floating particles
@@ -125,10 +162,23 @@ class MainMenuDisplay:
         self._update_particles()
 
 
-    def handle_hover(self, overlay):
+    def handle_hover(self):
         color = (255, 255, 255,  100)
 
         mx, my = pygame.mouse.get_pos()
+
+        width, height = self.start_button.size
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        
+        if self.start_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.start_button)
+            return
+
+        
+        width, height = self.sm_grid_button.size
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+
         if self.sm_grid_button.collidepoint(mx, my):
             overlay.fill(color)
             self.game.screen.blit(overlay, self.sm_grid_button)
@@ -138,15 +188,42 @@ class MainMenuDisplay:
         elif self.lg_grid_button.collidepoint(mx, my):
             overlay.fill(color)
             self.game.screen.blit(overlay, self.lg_grid_button)
+        elif self.easy_diff_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.easy_diff_button)
+        elif self.medium_diff_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.medium_diff_button)
+        elif self.hard_diff_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.hard_diff_button)
 
 
     def handle_click(self, mx, my):
-        if self.sm_grid_button.collidepoint(mx, my):
+        if self.start_button.collidepoint(mx, my):
+            self.game._new_game()
+
+        elif self.sm_grid_button.collidepoint(mx, my):
+            self.selected_board = MenuBoardSize.FIVE_BY_FIVE
             GridConfig.GRID_SIZE = 7
-            self.game._new_game()
+            
         elif self.md_grid_button.collidepoint(mx, my):
+            self.selected_board = MenuBoardSize.SEVEN_BY_SEVEN
             GridConfig.GRID_SIZE = 9
-            self.game._new_game()
+            
         elif self.lg_grid_button.collidepoint(mx, my):
+            self.selected_board = MenuBoardSize.NINE_BY_NINE
             GridConfig.GRID_SIZE = 11
-            self.game._new_game()
+            
+        elif self.easy_diff_button.collidepoint(mx, my):
+            self.game.mcts_iterations = 1000
+            self.selected_difficulty = MenuDifficulty.EASY
+
+        elif self.medium_diff_button.collidepoint(mx, my):
+            self.game.mcts_iterations = 2500
+            self.selected_difficulty = MenuDifficulty.MEDIUM
+
+        elif self.hard_diff_button.collidepoint(mx, my):
+            self.game.mcts_iterations = 5000
+            self.selected_difficulty = MenuDifficulty.HARD
+

@@ -98,7 +98,7 @@ class PanelDisplay:
         log_width = self.PANEL_WIDTH - 44
 
         for entry in self.game.log:
-            text_color = PanelColors.TEXT_DIM
+            text_color = PanelColors.TEXT
 
             if entry["src"] == MageType.PLAYER:
                 text_color = PanelColors.PLAYER

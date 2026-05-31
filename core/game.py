@@ -39,6 +39,18 @@ class Game:
                 pass
         return pygame.font.Font(None, size + 6)  # Fall back to pygame's built-in bitmap font
 
+    def _get_difficulty(self):
+        difficulty = "MEDIUM"
+
+        if self.mcts_iterations == 1000:
+            difficulty = "EASY"
+        elif self.mcts_iterations == 2500:
+            difficulty = "MEDIUM"
+        elif self.mcts_iterations == 5000:
+            difficulty = "HARD"  
+        
+        return difficulty
+
     def __init__(self):
         pygame.init()
         pygame.display.set_caption("Arcane Duel")
@@ -46,6 +58,9 @@ class Game:
         self.screen = pygame.display.set_mode(
             (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         )
+        
+        # Medium difficulty
+        self.mcts_iterations = 2500
 
         # Compute tile size to fit the fixed window, keeping the grid square
         self._update_tile_size()
@@ -74,7 +89,10 @@ class Game:
         self.spell_choice = Spell.FREEZE
         self.winner: Winner = None     
         
-        self.log = [{"src": None, "msg": "Welcome to Arcane Duel!"}] # Combat log entries (max 9 lines)
+        self.log = [{"src": None, "msg": "[SYSTEM]: Welcome to Arcane Duel!"},
+                    {"src": None, "msg": f"[SYSTEM]: {GridConfig.GRID_SIZE-2}x{GridConfig.GRID_SIZE-2} board"},
+                    {"src": None, "msg": f"[SYSTEM]: AI difficulty set to {self._get_difficulty()}"},
+                    {"src": None, "msg": f"[SYSTEM]: {self._get_difficulty()} = {self.mcts_iterations} iterations"}] # Combat log entries (max 9 lines)
 
         self.board_display = BoardDisplay(self)
         self.panel_display = PanelDisplay(self)
@@ -89,7 +107,7 @@ class Game:
         self.ai_calculating = False
         self.ai_stage = AIState.START
         self.ai_action  = None
-        self.mcts = MCTS()
+        self.mcts = MCTS(self.mcts_iterations)
 
         # Animation lists
         self.move_anims = []
@@ -121,6 +139,12 @@ class Game:
         return Phase.PLAYER_MOVE if r <= 50 else Phase.AI_MOVE
 
     def log_add(self, m):
+
+        if m["src"] == MageType.PLAYER:
+            m["msg"] = "[PLAYER]: " + m["msg"]
+        elif m["src"] == MageType.AI:
+            m["msg"] = "[AI]: " + m["msg"]    
+
         self.log.append(m)
         if len(self.log) > 15:
             self.log.pop(0)
@@ -198,8 +222,8 @@ class Game:
                 self.spell_choice = None
 
                 # LOG MESSAGE 
-                self.log_add({"src": MageType.PLAYER, "msg": f"Player moves to ({new_row}, {new_col})"})
-                self.log_add({"src": MageType.PLAYER, "msg": f"Player stepped on +{mana} mana"})
+                self.log_add({"src": MageType.PLAYER, "msg": f"moves to ({new_row}, {new_col})"})
+                self.log_add({"src": MageType.PLAYER, "msg": f"stepped on +{mana} mana"})
                 
                 self._flash("Player Spell Phase", t=60)
             else:
@@ -254,11 +278,11 @@ class Game:
                 
                 if self.spell_choice == Spell.BURN:
                     # LOG MESSAGE
-                    self.log_add({"src": MageType.PLAYER, "msg": f"Player casts BURN on tile ({row}, {col})"})
+                    self.log_add({"src": MageType.PLAYER, "msg": f"casts BURN on tile ({row}, {col})"})
 
                     # LOG MESSAGE
                     if tile.is_frozen():
-                        self.log_add({"src": MageType.PLAYER, "msg": f"Player collected +{tile.mana} mana"})
+                        self.log_add({"src": MageType.PLAYER, "msg": f"collected +{tile.mana} mana"})
 
                     # Play caster attack animation immediately and queue burn effect for impact
                     self._play_mage_attack(col, MageType.PLAYER)
@@ -274,7 +298,7 @@ class Game:
                     })
                 else:
                     # LOG MESSAGE    
-                    self.log_add({"src": MageType.PLAYER, "msg": f"Player casts FREEZE on tile ({row}, {col})"})
+                    self.log_add({"src": MageType.PLAYER, "msg": f"casts FREEZE on tile ({row}, {col})"})
 
                     self._play_mage_attack(col, MageType.PLAYER)
 
@@ -326,28 +350,28 @@ class Game:
 
         # Checks if Player still has moveable spots after AI Turn
         if turn == MageType.PLAYER and phase == Phase.PLAYER_MOVE and not self.board.valid_mage_moves(*self.board.player_pos):
-            self.log_add({"src": MageType.PLAYER, "msg": "Player has no more possible moves!"})
+            self.log_add({"src": MageType.PLAYER, "msg": "has no more possible moves!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
             _finish_game(self.victory_lap_pending)
             return True
 
         # Checks if Player still has valid spell targets during spell phase
         if turn == MageType.PLAYER and phase == Phase.PLAYER_SPELL and not self.board.valid_spell_targets(*self.board.player_pos):
-            self.log_add({"src": MageType.PLAYER, "msg": "Player has no more possible spell targets!"})
+            self.log_add({"src": MageType.PLAYER, "msg": "has no more possible spell targets!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.AI) # AI Wins
             _finish_game(self.victory_lap_pending)
             return True
         
         # Checks if AI still has moveable spots after Player Turn
         if turn == MageType.AI and phase == Phase.AI_MOVE and not self.board.valid_mage_moves(*self.board.ai_pos):
-            self.log_add({"src": MageType.AI, "msg": "AI has no more possible moves!"})
+            self.log_add({"src": MageType.AI, "msg": "has no more possible moves!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
 
         # Checks if AI still has valid spell targets during spell phase
         if turn == MageType.AI and phase == Phase.AI_SPELL and not self.board.valid_spell_targets(*self.board.ai_pos):
-            self.log_add({"src": MageType.AI, "msg": "Player has no more possible spell targets!"})
+            self.log_add({"src": MageType.AI, "msg": "has no more possible spell targets!"})
             self.victory_lap_pending = self.board.victory_lap(MageType.PLAYER) # Player Wins
             _finish_game(self.victory_lap_pending)
             return True
@@ -481,10 +505,10 @@ class Game:
             self.tile_destroy_anims.append(TileDestroyAnim(old_pos))
 
             # LOG MESSAGE
-            self.log_add({"src": MageType.AI, "msg": f"AI moves to ({move[0]}, {move[1]})"})
+            self.log_add({"src": MageType.AI, "msg": f"moves to ({move[0]}, {move[1]})"})
 
             if target:
-                self.log_add({"src": MageType.AI, "msg": f"AI stepped on +{self.board.get_tile(*target).mana} mana"})
+                self.log_add({"src": MageType.AI, "msg": f"stepped on +{self.board.get_tile(*target).mana} mana"})
 
             return
 
@@ -534,13 +558,13 @@ class Game:
             
             # LOG MESSAGE
             if spell == Spell.FREEZE:
-                self.log_add({"src": MageType.AI, "msg": f"AI casts FREEZE on tile ({target[0]}, {target[1]})"})
+                self.log_add({"src": MageType.AI, "msg": f"casts FREEZE on tile ({target[0]}, {target[1]})"})
 
             if spell == Spell.BURN:
-                self.log_add({"src": MageType.AI, "msg": f"AI casts BURN on tile ({target[0]}, {target[1]})"})
+                self.log_add({"src": MageType.AI, "msg": f"casts BURN on tile ({target[0]}, {target[1]})"})
 
             if spell == Spell.BURN and self.board.get_tile(*target).is_frozen():
-                self.log_add({"src": MageType.AI, "msg": f"AI collected +{tile.mana} mana"})
+                self.log_add({"src": MageType.AI, "msg": f"collected +{tile.mana} mana"})
 
             return
         

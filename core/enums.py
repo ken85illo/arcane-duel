@@ -36,6 +36,14 @@ class Winner(Enum):
     
 class Direction(Enum):
     LEFT = auto()
-    RIGHT = auto()
+    RIGHT = auto()    
 
-    
+class MenuBoardSize(Enum):
+    FIVE_BY_FIVE = auto()
+    SEVEN_BY_SEVEN = auto()
+    NINE_BY_NINE = auto()
+
+class MenuDifficulty(Enum):
+    EASY = auto()
+    MEDIUM = auto()
+    HARD = auto()

@@ -9,6 +9,7 @@ class MCTS:
         self.max_iterations = max_iterations
 
     def mcts_best_action(self, board):
+        print(f"Max Iterations: {self.max_iterations}\n")
         root = MCTSNode(turn=MageType.PLAYER)
         
         for i in range(self.max_iterations):
