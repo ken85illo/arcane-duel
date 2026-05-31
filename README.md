@@ -52,8 +52,8 @@ python -m pip install pygame-ce
 
 From the project root:
 
-```powershell
-python game.py
+```cmd
+python main.py
 ```
 
 ## Project Structure
@@ -65,8 +65,14 @@ python game.py
 - `board_display.py`, `panel_display.py`, `flash_display.py`, `game_over_display.py`, `main_menu_display.py` – Game UI rendering
 - `assets/` – Sprite sheets and image resources
 
-## Notes
+## Game Preview
+**Main Menu:** The game's main menu where you can start a new match, change settings, and view controls.
+![main menu display](./docs/menu.PNG)
 
+**Gameplay (9x9 board):** Example of an in-game 9x9 match showing mana tiles, walls, and both mages.
+![9x9 game board](./docs/board-9x9.PNG)
+
+## Notes
 - The AI uses Monte Carlo Tree Search for planning moves and spells.
 - Tile mana is randomized each game for replayability.
 - The project is designed for local play and does not require online connectivity.
