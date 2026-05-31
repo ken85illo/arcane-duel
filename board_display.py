@@ -16,6 +16,7 @@ class BoardDisplay:
         self._draw_grid()
         self._draw_victory_lap()
         self._draw_freeze_anims()
+        self._draw_tile_destroy_anims()
         self._draw_mages()
         self._draw_fire_anims()
 
@@ -122,7 +123,34 @@ class BoardDisplay:
                     effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
                     effect.fill((40, 160, int(210*(1-freeze_frame)), alpha))
                     self.game.screen.blit(effect, rect.topleft)    
+
         
+    def _draw_tile_destroy_anims(self):
+        for anim in self.game.tile_destroy_anims:
+            rect = tile_rect(*anim.pos)
+            anim_frame = anim.anim_frame()
+
+            if anim_frame <= 0:
+                continue
+
+            frame_width = int(GridConfig.TILE_SIZE * anim_frame)
+            frame_height = int(GridConfig.TILE_SIZE * anim_frame)
+
+            if frame_width < 2 or frame_height < 2:
+                continue
+
+            surface = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
+            alpha = int(220 * anim_frame)
+            col = (*anim.tile_color, alpha)
+
+            pygame.draw.rect(surface, col, pygame.Rect(0, 0, frame_width, frame_height), border_radius=8)
+            pos_x = rect.centerx - frame_width // 2
+            pos_y = rect.centery - frame_height // 2
+            self.game.screen.blit(surface, (pos_x, pos_y))
+
+
+            
+
 
     def _draw_active_tile_overlay(self, row, col, rect, overlay):
         game = self.game
