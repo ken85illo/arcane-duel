@@ -1,10 +1,10 @@
 import random
-from freeze_anim import FreezeAnim
-from tile import Tile
-from enums import Direction, TileState, Spell, MageType
-from ui_util import GridConfig
-from mage import MageStates
-from bfs_board import breadth_first_search
+from graphics.freeze_anim import FreezeAnim
+from core.tile import Tile
+from core.enums import Direction, TileState, Spell, MageType
+from ui.util import GridConfig
+from core.mage import MageStates
+from ai.bfs import breadth_first_search
 
 class Board:
     CUMULATIVE_TILE_GEN_CHANCE = 15

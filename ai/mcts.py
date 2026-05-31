@@ -1,9 +1,8 @@
 import random
 import time
-from bfs_board import breadth_first_search
-from mcts_node import MCTSNode
-from enums import Spell, MageType
-from collections import deque
+from ai.bfs import breadth_first_search
+from ai.mcts_node import MCTSNode
+from core.enums import Spell, MageType
 
 class MCTS:
     def __init__(self, max_iterations=5000):

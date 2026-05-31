@@ -1,5 +1,5 @@
 import pygame
-from spritesheet import SpriteSheet
+from graphics.spritesheet import SpriteSheet
 
 
 class Platform:

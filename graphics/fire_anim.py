@@ -1,8 +1,8 @@
 import pygame
 
-from animation import Animation
-from spritesheet import SpriteSheet
-from ui_util import GridConfig, tile_rect
+from graphics.animation import Animation
+from graphics.spritesheet import SpriteSheet
+from ui.util import GridConfig, tile_rect
 
 class FireAnim:
     FALL_END = 84

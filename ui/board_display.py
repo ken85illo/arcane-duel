@@ -1,10 +1,8 @@
 import pygame
-from enum import Enum, auto
-from board import Board
-from platform_sprite import Platform
-from enums import Direction, MageType, Phase, Spell, Winner
-from tile import Tile
-from ui_util import GridConfig, HighlightColors, draw_border, lerp, tile_rect
+from graphics.platform_sprite import Platform
+from core.enums import Direction, MageType, Phase, Spell, Winner
+from core.tile import Tile
+from ui.util import GridConfig, HighlightColors, draw_border, tile_rect
 
 class BoardDisplay:
     def __init__(self, game):

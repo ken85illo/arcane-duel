@@ -1,6 +1,6 @@
 import math
 
-from enums import MageType, Spell
+from core.enums import MageType, Spell
 
 
 class MCTSNode:

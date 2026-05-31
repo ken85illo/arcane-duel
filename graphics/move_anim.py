@@ -1,6 +1,6 @@
-from board_display import tile_rect
-from enums import MageType
-from ui_util import lerp
+from ui.board_display import tile_rect
+from core.enums import MageType
+from ui.util import lerp
 
 
 class MoveAnim:

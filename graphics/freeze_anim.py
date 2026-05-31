@@ -1,5 +1,3 @@
-import math
-import random
 
 class FreezeAnim:
     FREEZE_END = 120

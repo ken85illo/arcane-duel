@@ -1,6 +1,5 @@
-from ui_util import GridConfig, PanelColors, draw_border, lerp
-from enums import Phase, Spell, MageType
-from board_display import draw_border
+from ui.util import GridConfig, PanelColors, draw_border, lerp
+from core.enums import Phase, Spell, MageType
 import pygame
 
 
