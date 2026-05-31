@@ -8,8 +8,37 @@ class MCTS:
     def __init__(self, max_iterations=5000):
         self.max_iterations = max_iterations
 
+    def print_search_tree(self, node, depth=0):
+        if node is None:
+            return
+
+        indent = "│   " * depth
+
+        action_str = "ROOT"
+        if node.action:
+            move, spell, target = node.action
+            action_str = f"Move={move} Spell={spell.name} Target={target}"
+
+        avg_value = node.value / node.visits if node.visits > 0 else 0
+
+        print(
+            f"{indent}├── {action_str} "
+            f"[Visits={node.visits}, "
+            f"Value={node.value:.2f}, "
+            f"Avg={avg_value:.2f}]"
+        )
+
+        children = sorted(
+            node.children,
+            key=lambda c: c.visits,
+            reverse=True
+        )
+
+        for child in children:
+            self.print_search_tree(child, depth + 1)
+
     def mcts_best_action(self, board):
-        print(f"Max Iterations: {self.max_iterations}\n")
+        print(f"Max Iterations: {self.max_iterations}")
         root = MCTSNode(turn=MageType.PLAYER)
         
         for i in range(self.max_iterations):
@@ -30,6 +59,10 @@ class MCTS:
 
             time.sleep(0.001)
 
+        print("\n=== MCTS SEARCH TREE ===")
+        self.print_search_tree(root)
+        print("========================\n")
+        
         if not root.children:
             moves = board.valid_mage_moves(*board.ai_pos)
             if not moves:
@@ -45,7 +78,6 @@ class MCTS:
         
         return root.most_visited().action
 
-
     # 1. Selection: descend to a node with unexplored actions
     def _selection(self, node, board):
         while node.children and not node.untried_actions(board):
@@ -54,7 +86,6 @@ class MCTS:
 
         return node, board
     
-
     # 2. Expansion: try one new action
     def _expansion(self, node, board):
         untried =  node.untried_actions(board)

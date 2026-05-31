@@ -77,3 +77,33 @@ class MCTSNode:
 
     def most_visited(self):
         return max(self.children, key=lambda child: child.visits)
+
+    def _action_str(self):
+        if self.action is None:
+            return "Root"
+
+        move, spell, target = self.action
+        source = f"move={move}"
+        spell_part = f"spell={spell.name}"
+        target_part = f"target={target}" if target is not None else "target=None"
+
+        return f"{source}, {spell_part}, {target_part}"
+
+    def _node_label(self):
+        turn_name = self.turn.name
+        average_value = self.value / self.visits if self.visits else 0.0
+        return (
+            f"[{turn_name}] {self._action_str()} "
+            f"visits={self.visits} value={self.value:.2f} avg={average_value:.2f}"
+        )
+
+    def print_tree(self, depth=0, max_depth=None):
+        if max_depth is not None and depth > max_depth:
+            return
+
+        indent = "  " * depth
+        print(f"{indent}{self._node_label()}")
+
+        if max_depth is None or depth < max_depth:
+            for child in self.children:
+                child.print_tree(depth + 1, max_depth)
