@@ -1,6 +1,6 @@
 import pygame
-from ui_util import PanelColors
-from enums import MageType, Winner
+from ui.util import PanelColors
+from core.enums import MageType, Winner
 
 class GameOverDisplay:
     def __init__(self, game):

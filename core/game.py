@@ -3,25 +3,24 @@ import sys
 import threading
 import time
 
-from freeze_anim import FreezeAnim
-from mcts import MCTS
-from enums import Phase, AIState, Winner, Direction
-from board import Board
-from mage import Mage, MageStates
-from board import Board
-from enums import MageType, Spell, Winner
+from graphics.freeze_anim import FreezeAnim
+from ai.mcts import MCTS
+from core.enums import Phase, AIState, Winner, Direction
+from core.board import Board
+from core.mage import Mage, MageStates
+from core.enums import MageType, Spell
 
-from fire_anim import FireAnim
-from move_anim import MoveAnim
-from tile_destroy_anim import TileDestroyAnim
-from transition import Transition
-from ui_util import GridConfig
+from graphics.fire_anim import FireAnim
+from graphics.move_anim import MoveAnim
+from graphics.tile_destroy_anim import TileDestroyAnim
+from graphics.transition import Transition
+from ui.util import GridConfig
 
-from board_display import BoardDisplay, tile_rect
-from flash_display import FlashDisplay
-from game_over_display import GameOverDisplay
-from panel_display import PanelDisplay
-from main_menu_display import MainMenuDisplay
+from ui.board_display import BoardDisplay, tile_rect
+from ui.flash_display import FlashDisplay
+from ui.game_over_display import GameOverDisplay
+from ui.panel_display import PanelDisplay
+from ui.main_menu_display import MainMenuDisplay
 
 import pygame
 
@@ -652,5 +651,3 @@ class Game:
             pygame.display.flip()
             self.clock.tick(60)
 
-if __name__ == "__main__":
-    Game().run()

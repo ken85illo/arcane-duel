@@ -1,5 +1,5 @@
 import random
-from enums import TileState
+from core.enums import TileState
 
 class Tile:
     FREEZE_TILE_TIMER = 5

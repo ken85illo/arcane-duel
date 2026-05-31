@@ -1,8 +1,8 @@
 from enum import Enum, auto
 import pygame
-from ui_util import GridConfig
-from spritesheet import SpriteSheet
-from animation import Animation
+from ui.util import GridConfig
+from graphics.spritesheet import SpriteSheet
+from graphics.animation import Animation
 
 class MageStates(Enum):
     IDLE = auto()

@@ -1,5 +1,5 @@
 import pygame
-from ui_util import GridConfig, PanelColors
+from ui.util import GridConfig, PanelColors
 
 class FlashDisplay:
     def __init__(self, game):

@@ -1,6 +1,6 @@
 import pygame
 import random
-from ui_util import PanelColors, GridConfig
+from ui.util import PanelColors, GridConfig
 
 class MainMenuDisplay:
     BUTTON_WIDTH = 260
@@ -74,6 +74,8 @@ class MainMenuDisplay:
         start_x = CENTER_X - total_width // 2
         button_y = SCREEN_H - 255
 
+        overlay = pygame.Surface((button_width, button_height), pygame.SRCALPHA)
+
         button_outline = pygame.Rect(start_x - 3.5, button_y - 3.5, button_width + 7, button_height + 7,)
         pygame.draw.rect(self.game.screen, button_outline_color, button_outline, border_radius=14)
 
@@ -101,7 +103,7 @@ class MainMenuDisplay:
         
         self.game.screen.blit(title_text, (SCREEN_W // 2 - title_text.get_width() // 2, SCREEN_H // 2 - 120))
         self.game.screen.blit(subtitle_text, (SCREEN_W // 2 - subtitle_text.get_width() // 2, SCREEN_H // 2 - 72))
-        self.game.screen.blit(grid_text, (SCREEN_W // 2 - grid_text.get_width() // 2, button_y - 30))
+        self.game.screen.blit(grid_text, (SCREEN_W // 2 - grid_text.get_width() // 2, button_y - 50))
         self.game.screen.blit(hint_text, (SCREEN_W // 2 - hint_text.get_width() // 2, SCREEN_H - 50))
 
         # Decorative line
@@ -111,6 +113,9 @@ class MainMenuDisplay:
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE,
                          (CENTER_X - 200, button_y + button_height + 15), (CENTER_X + 200, button_y + button_height + 15), 1)                         
 
+        self.handle_hover(overlay)
+
+
         # Floating particles
         for p in self.particles:
             s = pygame.Surface((int(p["r"]*2), int(p["r"]*2)), pygame.SRCALPHA)
@@ -118,6 +123,22 @@ class MainMenuDisplay:
             self.game.screen.blit(s, (int(p["x"]-p["r"]), int(p["y"]-p["r"])))
 
         self._update_particles()
+
+
+    def handle_hover(self, overlay):
+        color = (255, 255, 255,  100)
+
+        mx, my = pygame.mouse.get_pos()
+        if self.sm_grid_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.sm_grid_button)
+        elif self.md_grid_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.md_grid_button)
+        elif self.lg_grid_button.collidepoint(mx, my):
+            overlay.fill(color)
+            self.game.screen.blit(overlay, self.lg_grid_button)
+
 
     def handle_click(self, mx, my):
         if self.sm_grid_button.collidepoint(mx, my):
