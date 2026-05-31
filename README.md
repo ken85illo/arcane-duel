@@ -53,7 +53,7 @@ python -m pip install pygame-ce
 From the project root:
 
 ```powershell
-python game.py
+python main.py
 ```
 
 ## Project Structure
