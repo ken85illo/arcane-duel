@@ -162,8 +162,9 @@ class MainMenuDisplay:
         self._update_particles()
 
 
-    def handle_hover(self):
+    def handle_hover(self, border_radius=14):
         color = (255, 255, 255,  100)
+
 
         mx, my = pygame.mouse.get_pos()
 
@@ -171,7 +172,7 @@ class MainMenuDisplay:
         overlay = pygame.Surface((width, height), pygame.SRCALPHA)
         
         if self.start_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.start_button)
             return
 
@@ -180,22 +181,22 @@ class MainMenuDisplay:
         overlay = pygame.Surface((width, height), pygame.SRCALPHA)
 
         if self.sm_grid_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.sm_grid_button)
         elif self.md_grid_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.md_grid_button)
         elif self.lg_grid_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.lg_grid_button)
         elif self.easy_diff_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.easy_diff_button)
         elif self.medium_diff_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.medium_diff_button)
         elif self.hard_diff_button.collidepoint(mx, my):
-            overlay.fill(color)
+            pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
             self.game.screen.blit(overlay, self.hard_diff_button)
 
 

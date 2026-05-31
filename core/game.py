@@ -30,14 +30,8 @@ class Game:
     SCREEN_HEIGHT = 660                 # GridConfig.GRID_SIZE * GridConfig.TILE_SIZE
     
     def _make_font(self, size, bold=False):
-        for name in ("dejavusans", "liberationsans", "freesans", "droidsans"):
-            try:
-                f = pygame.font.SysFont(name, size, bold=bold)
-                if f:
-                    return f
-            except Exception:
-                pass
-        return pygame.font.Font(None, size + 6)  # Fall back to pygame's built-in bitmap font
+        font =  pygame.font.Font("assets/luckiest_guy.ttf", size)
+        return font
 
     def _get_difficulty(self):
         difficulty = "MEDIUM"

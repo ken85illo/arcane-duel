@@ -43,6 +43,7 @@ class BoardDisplay:
                         color = mana_text_colors[tile.mana - 1] 
                         
                     text = self.game.font_lg.render(str(tile.mana), True, color)
+                    text.set_alpha(180)
                     self.game.screen.blit(text, rect)
 
                     self._draw_active_tile_overlay(row, col, rect, overlay)
