@@ -393,11 +393,18 @@ class Game:
 
         self.winner = Winner.PLAYER if player_mana > ai_mana else (Winner.AI if ai_mana > player_mana else Winner.DRAW)
 
-        win_sprite = self.player if self.winner == Winner.PLAYER else self.ai
         lose_sprite = self.ai if self.winner == Winner.PLAYER else self.player
-
-        win_sprite.set_state(MageStates.WIN)
         lose_sprite.set_state(MageStates.DEATH)
+
+        if self.winner == Winner.PLAYER:
+            win_sprites = [self.player]
+        elif self.winner == Winner.AI:
+            win_sprites = [self.ai]
+        else:
+            win_sprites = [self.player, self.ai]
+
+        for sprite in win_sprites:
+            sprite.set_state(MageStates.WIN)
 
         self.phase = Phase.GAME_OVER
 
