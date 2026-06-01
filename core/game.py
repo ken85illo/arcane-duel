@@ -528,6 +528,7 @@ class Game:
             move, spell, target = self.ai_action
             valid_targets = self.board.valid_spell_targets(*self.board.ai_pos)
 
+
             target = target if target in valid_targets else (random.choice(valid_targets) if valid_targets else None)
             print(f"AI Action: Move to {move}, Spell: {spell}, Target: {target}")
 

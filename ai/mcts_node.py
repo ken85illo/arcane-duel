@@ -41,9 +41,6 @@ class MCTSNode:
             targets = board.valid_spell_targets(*move)
             move_mana = current_mana + board.get_tile(*move).mana
 
-            # Add a move-only action even if there are no valid spell targets.
-            actions.append((move, Spell.FREEZE, None))
-
             for target in targets:
                 if not board.get_tile(*target).is_frozen():
                     actions.append((move, Spell.FREEZE, target))
