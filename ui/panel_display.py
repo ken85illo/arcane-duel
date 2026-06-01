@@ -18,8 +18,8 @@ class PanelDisplay:
         y_pos = 12
 
         # Scorecards for each mage
-        y_pos = self._score_card(x_pos, y_pos, MageType.PLAYER, self.game.board.player_mana, PanelColors.PLAYER, self.game.phase == Phase.PLAYER_MOVE)
-        y_pos = self._score_card(x_pos, y_pos, MageType.AI, self.game.board.ai_mana, PanelColors.AI, self.game.phase == Phase.AI_MOVE) 
+        y_pos = self._score_card(x_pos, y_pos, MageType.PLAYER, self.game.board.player_mana, PanelColors.PLAYER, self.game.phase == Phase.PLAYER_MOVE or self.game.phase == Phase.PLAYER_SPELL)
+        y_pos = self._score_card(x_pos, y_pos, MageType.AI, self.game.board.ai_mana, PanelColors.AI, self.game.phase == Phase.AI_MOVE or self.game.phase == Phase.AI_SPELL) 
 
         # Divider
         pygame.draw.line(self.game.screen, PanelColors.PANEL_LINE, (x_pos, y_pos), (x_pos + self.PANEL_WIDTH - 28, y_pos))
