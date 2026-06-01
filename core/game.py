@@ -1,7 +1,6 @@
 import random
 import sys
 import threading
-import time
 
 from graphics.freeze_anim import FreezeAnim
 from ai.mcts import MCTS
@@ -322,7 +321,7 @@ class Game:
                 if who == MageType.PLAYER:
                     self.board.player_direction = Direction.LEFT if col < old_col else Direction.RIGHT
                 else:
-                    self.board.ai_directiion = Direction.LEFT if col < old_col else Direction.RIGHT
+                    self.board.ai_direction = Direction.LEFT if col < old_col else Direction.RIGHT
                 
     def _end_player_turn(self):
         if self.pending_spells or self.player.state != MageStates.IDLE:
