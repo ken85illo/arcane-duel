@@ -57,7 +57,8 @@ class MCTS:
             # Backpropagation
             self._backpropagation(node, score)
 
-            time.sleep(0.001)
+            time.sleep(0.0005)
+
 
         print("\n=== MCTS SEARCH TREE ===")
         self.print_search_tree(root)
