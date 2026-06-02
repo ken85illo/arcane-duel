@@ -26,7 +26,7 @@ class Transition:
         circle_pos_x = self.screen_width // 2
         circle_pos_y = self.screen_height // 2
 
-        mask = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA)
+        mask = pygame.Surface((self.screen_width, self.screen_height), pygame.SRCALPHA).convert_alpha()
         mask.fill((12, 14, 26, 255))
 
         pygame.draw.circle(mask, (0, 0, 0, 0), (circle_pos_x, circle_pos_y), radius)

@@ -1,6 +1,7 @@
 import random
 import sys
 import threading
+import asyncio
 
 from graphics.freeze_anim import FreezeAnim
 from ai.mcts import MCTS
@@ -45,12 +46,13 @@ class Game:
         return difficulty
 
     def __init__(self):
-        pygame.init()
         pygame.display.set_caption("Arcane Duel")
 
         self.screen = pygame.display.set_mode(
             (self.SCREEN_WIDTH, self.SCREEN_HEIGHT)
         )
+
+        self.running = True
         
         # Medium difficulty
         self.mcts_iterations = 2500
@@ -69,6 +71,7 @@ class Game:
         self.phase = Phase.MAIN_MENU
         self.main_menu_display = MainMenuDisplay(self)
         self.player_finish_turn = False
+        self.task = None
     
     # ===== Game Setup =====
     def _new_game(self):
@@ -170,6 +173,7 @@ class Game:
         self.hover_tile = self._tile_at(mx, my)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                self.running = False
                 pygame.quit()
                 sys.exit()    
             
@@ -448,9 +452,9 @@ class Game:
     def start_ai_calculation(self):
         self.ai_stage = AIState.THINKING
 
-        def ai_calculation(board, mcts):
+        async def ai_calculation_async(board, mcts):
             try:
-                best_action = mcts.mcts_best_action(board)
+                best_action = await mcts.mcts_best_action(board)
 
                 self.ai_action = best_action
 
@@ -470,8 +474,8 @@ class Game:
                 return
 
         # Run mcts in the background
-        worker = threading.Thread(target=ai_calculation, args=(self.board, self.mcts), daemon=True)
-        worker.start()
+        self.task = asyncio.create_task(ai_calculation_async(self.board, self.mcts))
+
 
         
 
@@ -490,7 +494,7 @@ class Game:
             return
         
 
-        if self.ai_stage == AIState.START and not self.pending_spells:
+        if self.ai_stage == AIState.START and not self._is_any_anim_running():
             self.start_ai_calculation()
             return
 
@@ -649,19 +653,24 @@ class Game:
 
 
     def _is_any_anim_running(self):
-        return (self.move_anims or self.fire_anims or self.freeze_anims or self.tile_destroy_anims)
+        return self.move_anims or self.fire_anims or self.freeze_anims or self.tile_destroy_anims or self.pending_spells or not self.transition.done()
                 
     # ===== Main Game Loop =====
-    def run(self):
-        while True:
+    async def run(self):
+        while self.running:
             self._events()
 
             # Main menu loop
             if self.phase == Phase.MAIN_MENU:
+                if self.task:
+                    self.task.cancel()
+                    self.task = None
+
                 self.main_menu_display.draw()
-                pygame.display.flip()
+
+                pygame.display.update()
                 self.clock.tick(60)
-                
+                await asyncio.sleep(0)
                 continue
 
             self._update()
@@ -680,6 +689,8 @@ class Game:
                 self.flash_display.draw()
 
             
-            pygame.display.flip()
+            pygame.display.update()
             self.clock.tick(60)
+            await asyncio.sleep(0)
+
 

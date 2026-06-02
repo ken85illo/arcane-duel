@@ -1,3 +1,4 @@
+import asyncio
 import random
 import time
 from ai.bfs import breadth_first_search
@@ -37,10 +38,13 @@ class MCTS:
         for child in children:
             self.print_search_tree(child, depth + 1)
 
-    def mcts_best_action(self, board):
+    async def mcts_best_action(self, board):
         print(f"Max Iterations: {self.max_iterations}")
         root = MCTSNode(turn=MageType.PLAYER)
         
+
+        BATCH_SIZE = 25
+
         for i in range(self.max_iterations):
             node = root
             board_sim = board.create_board_copy()
@@ -57,12 +61,14 @@ class MCTS:
             # Backpropagation
             self._backpropagation(node, score)
 
-            time.sleep(0.0005)
+            if i % BATCH_SIZE == 0:
+                await asyncio.sleep(0)
 
 
-        print("\n=== MCTS SEARCH TREE ===")
-        self.print_search_tree(root)
-        print("========================\n")
+
+        # print("\n=== MCTS SEARCH TREE ===")
+        # self.print_search_tree(root)
+        # print("========================\n")
         
         if not root.children:
             moves = board.valid_mage_moves(*board.ai_pos)

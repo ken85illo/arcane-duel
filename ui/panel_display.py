@@ -37,7 +37,7 @@ class PanelDisplay:
         self._spell_btn(frozen, Spell.FREEZE, is_player_turn, "Freeze (-0)", PanelColors.BTN_FRZ, True)
         self._spell_btn(burn, Spell.BURN, is_player_turn, "Burn (-3)", PanelColors.BTN_BURN, can_afford_burn)
 
-        text = self.game.font_sm.render("Press [esc] to go to main menu", True, PanelColors.GOLD)
+        text = self.game.font_sm.render("Press [esc] to go to main menu", True, PanelColors.GOLD).convert_alpha()
         self.game.screen.blit(text, (x_pos, 630))
     
     def _score_card(self, x, y, who, mana, color, is_active = False):
@@ -56,9 +56,9 @@ class PanelDisplay:
         if self.game.victory_lap_pending and self.game.victory_lap_pending[0] == who:
             score_color = (255, 255, 0)
 
-        who_text = self.game.font_sm.render("PLAYER" if who == MageType.PLAYER else "AI", True, color)
-        mana_score_text = self.game.font_xl.render(str(max(0, mana)), True, score_color)
-        mana_caption_text = self.game.font_sm.render("mana", True, score_color)
+        who_text = self.game.font_sm.render("PLAYER" if who == MageType.PLAYER else "AI", True, color).convert_alpha()
+        mana_score_text = self.game.font_xl.render(str(max(0, mana)), True, score_color).convert_alpha()
+        mana_caption_text = self.game.font_sm.render("mana", True, score_color).convert_alpha()
 
         self.game.screen.blit(who_text, (x + 10, y + 7))
         self.game.screen.blit(mana_score_text, (x + 10, y + 24))       
@@ -86,7 +86,7 @@ class PanelDisplay:
         return lines
 
     def _combat_log(self, x, y):
-        lh2 = self.game.font_sm.render("COMBAT LOG", True, PanelColors.TEXT_DIM)
+        lh2 = self.game.font_sm.render("COMBAT LOG", True, PanelColors.TEXT_DIM).convert_alpha()
         self.game.screen.blit(lh2, (x, y))
 
         y += 18
@@ -106,7 +106,7 @@ class PanelDisplay:
             elif entry["src"] == MageType.AI:
                 text_color = PanelColors.AI
 
-            lb = self.game.font_sm.render(entry["msg"][:40], True, text_color)
+            lb = self.game.font_sm.render(entry["msg"][:40], True, text_color).convert_alpha()
             self.game.screen.blit(lb, (x, y))
             y += 16
 
@@ -124,7 +124,7 @@ class PanelDisplay:
             # Not the spell phase: just show a dim placeholder
             draw_border(self.game.screen,PanelColors.BTN_DIM, rect, radius=10)
             
-            text = self.game.font_md.render(label, True, PanelColors.TEXT_DIM)
+            text = self.game.font_md.render(label, True, PanelColors.TEXT_DIM).convert_alpha()
             self.game.screen.blit(text, (rect.x + 10, rect.y + 16))
             return
 
@@ -134,7 +134,7 @@ class PanelDisplay:
             # Can't afford this spell: greyed-out with "need 3" message
             draw_border(self.game.screen, (50, 30, 30), rect, radius=9)
             draw_border(self.game.screen, (100, 50, 50), rect, radius=9, width=2)
-            text = self.game.font_md.render(label + " [need 3]", True, (120, 70, 70))
+            text = self.game.font_md.render(label + " [need 3]", True, (120, 70, 70)).convert_alpha()
             self.game.screen.blit(text, (rect.x + 10, rect.y + 16))
             return
 
@@ -145,7 +145,7 @@ class PanelDisplay:
         draw_border(self.game.screen, bg_color, rect, radius=9, width =0)
         draw_border(self.game.screen, border_color, rect, radius=9, width=2)
         
-        text = self.game.font_md.render(label, True, PanelColors.WHITE if is_sel else PanelColors.WHITE)
+        text = self.game.font_md.render(label, True, PanelColors.WHITE if is_sel else PanelColors.WHITE).convert_alpha()
         self.game.screen.blit(text, (rect.x + 10, rect.y + 14))
 
         

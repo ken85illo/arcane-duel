@@ -20,7 +20,7 @@ class BoardDisplay:
 
     def _draw_grid(self):
         game = self.game
-        overlay = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
+        overlay = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA).convert_alpha()
 
         for row in range(GridConfig.GRID_SIZE):
             for col in range(GridConfig.GRID_SIZE):
@@ -42,7 +42,7 @@ class BoardDisplay:
                         ]
                         color = mana_text_colors[tile.mana - 1] 
                         
-                    text = self.game.font_lg.render(str(tile.mana), True, color)
+                    text = self.game.font_lg.render(str(tile.mana), True, color).convert_alpha()
                     text.set_alpha(180)
                     self.game.screen.blit(text, rect)
 
@@ -91,7 +91,7 @@ class BoardDisplay:
 
         for tile in self.victory_lap_tiles:
             rect = tile_rect(*tile)
-            effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
+            effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA).convert_alpha()
             effect.fill(color)
             self.game.screen.blit(effect, rect.topleft)    
         
@@ -107,7 +107,7 @@ class BoardDisplay:
                 rect = tile_rect(*anim.target_pos)
 
                 if alpha > 0:
-                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
+                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA).convert_alpha()
                     effect.fill((255, int(80*(1-impact_frame)), 0, alpha))
                     self.game.screen.blit(effect, rect.topleft)    
 
@@ -119,7 +119,7 @@ class BoardDisplay:
                 rect = tile_rect(*anim.target_pos)
 
                 if alpha > 0:
-                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA)
+                    effect = pygame.Surface((GridConfig.TILE_SIZE, GridConfig.TILE_SIZE), pygame.SRCALPHA).convert_alpha()
                     effect.fill((40, 160, int(210*(1-freeze_frame)), alpha))
                     self.game.screen.blit(effect, rect.topleft)    
 
@@ -138,7 +138,7 @@ class BoardDisplay:
             if frame_width < 2 or frame_height < 2:
                 continue
 
-            surface = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA)
+            surface = pygame.Surface((frame_width, frame_height), pygame.SRCALPHA).convert_alpha()
             alpha = int(220 * anim_frame)
             col = (*anim.tile_color, alpha)
 
@@ -168,7 +168,7 @@ class BoardDisplay:
             draw_border(game.screen, HighlightColors.SPELL_BORDER, rect)
 
 
-        if (row, col) == game.hover_tile:
+        if (row, col) == game.hover_tile and game.phase in [Phase.PLAYER_MOVE, Phase.PLAYER_SPELL]:
             overlay.fill(HighlightColors.HOVER_FILL)
             game.screen.blit(overlay, rect.topleft)
 

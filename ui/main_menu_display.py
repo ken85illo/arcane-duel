@@ -19,16 +19,16 @@ class MainMenuDisplay:
         )
 
         # Default small text
-        button_text = self.game.font_sm.render(text, True, text_color)
+        button_text = self.game.font_sm.render(text, True, text_color).convert_alpha()
 
         if text_size == "sm":
-            button_text = self.game.font_sm.render(text, True, text_color)
+            button_text = self.game.font_sm.render(text, True, text_color).convert_alpha()
 
         elif text_size == "md":
-            button_text = self.game.font_md.render(text, True, text_color)
+            button_text = self.game.font_md.render(text, True, text_color).convert_alpha()
 
         elif text_size == "lg":
-            button_text = self.game.font_lg.render(text, True, text_color)
+            button_text = self.game.font_lg.render(text, True, text_color).convert_alpha()
         
         pygame.draw.rect(self.game.screen, color, button_rect, border_radius=14)
         
@@ -62,10 +62,10 @@ class MainMenuDisplay:
 
         self.game.screen.fill((12, 14, 30))
         
-        title_text = self.game.font_xl.render("ARCANE DUEL", True, PanelColors.GOLD)
-        subtitle_text = self.game.font_md.render("Monte Carlo Tree and BFS-Driven Strategy Game", True, PanelColors.TEXT_DIM)
-        grid_text = self.game.font_md.render("BOARD SIZE", True, PanelColors.TEXT_DIM)
-        difficulty_text = self.game.font_md.render("AI DIFFICULTY", True, PanelColors.TEXT_DIM)
+        title_text = self.game.font_xl.render("ARCANE DUEL", True, PanelColors.GOLD).convert_alpha()
+        subtitle_text = self.game.font_md.render("Monte Carlo Tree and BFS-Driven Strategy Game", True, PanelColors.TEXT_DIM).convert_alpha()
+        grid_text = self.game.font_md.render("BOARD SIZE", True, PanelColors.TEXT_DIM).convert_alpha()
+        difficulty_text = self.game.font_md.render("AI DIFFICULTY", True, PanelColors.TEXT_DIM).convert_alpha()
 
         # GRID OPTION BUTTONS
         button_width = 100
@@ -155,7 +155,7 @@ class MainMenuDisplay:
 
         # Floating particles
         for p in self.particles:
-            s = pygame.Surface((int(p["r"]*2), int(p["r"]*2)), pygame.SRCALPHA)
+            s = pygame.Surface((int(p["r"]*2), int(p["r"]*2)), pygame.SRCALPHA).convert_alpha()
             pygame.draw.circle(s, (*p["col"], p["alpha"]), (int(p["r"]), int(p["r"])), int(p["r"]))
             self.game.screen.blit(s, (int(p["x"]-p["r"]), int(p["y"]-p["r"])))
 
@@ -169,7 +169,7 @@ class MainMenuDisplay:
         mx, my = pygame.mouse.get_pos()
 
         width, height = self.start_button.size
-        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA).convert_alpha()
         
         if self.start_button.collidepoint(mx, my):
             pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
@@ -178,7 +178,7 @@ class MainMenuDisplay:
 
         
         width, height = self.sm_grid_button.size
-        overlay = pygame.Surface((width, height), pygame.SRCALPHA)
+        overlay = pygame.Surface((width, height), pygame.SRCALPHA).convert_alpha()
 
         if self.sm_grid_button.collidepoint(mx, my):
             pygame.draw.rect( overlay, color, overlay.get_rect(), border_radius=border_radius)
